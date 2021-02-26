@@ -4,6 +4,8 @@ const http = require('http');
 const httpProxy = require('http-proxy');
 const url = require('url');
 const proxy = httpProxy.createProxyServer();
+const ueberdb = require('ueberdb2');
+const db = new ueberdb.Database('dirty', {filename: 'var/dirty.db'});
 
 proxy.on('error', function(e){
   console.error("Error", e);

@@ -4,6 +4,7 @@
   "description": "Etherpad Reverse Proxy",
   "main": "app.js",
   "dependencies": {
+    "eslint-config-etherpad": "^1.0.25",
     "http-proxy": "^1.18.1",
     "url": "^0.11.0"
   },
