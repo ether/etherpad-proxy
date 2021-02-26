@@ -1,0 +1,32 @@
+{
+  "name": "etherpad-proxy",
+  "version": "0.0.1",
+  "description": "Etherpad Reverse Proxy",
+  "main": "app.js",
+  "dependencies": {
+    "http-proxy": "^1.18.1",
+    "url": "^0.11.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ether/etherpad-proxy.git"
+  },
+  "keywords": [
+    "reverse",
+    "proxy",
+    "etherpad",
+    "http",
+    "scale",
+    "shard"
+  ],
+  "author": "John McLear",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/ether/etherpad-proxy/issues"
+  },
+  "homepage": "https://github.com/ether/etherpad-proxy#readme"
+}
