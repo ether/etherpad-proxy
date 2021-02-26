@@ -11,8 +11,8 @@ const checkAvailabilityInterval = 1000;
 
 // Hard coded backends for now.
 const backends = [
-  'http://localhost:9001',
-  'http://localhost:9002',
+  'localhost:9001',
+  'localhost:9002',
 ];
 
 const mostFreeBackend = {
@@ -26,15 +26,14 @@ const mostFreeBackend = {
     // every second check every backend
     for (const backend of backends) {
       // query if it's free
-      const stats = await superagent.get(`${backend}/stats`);
+      const stats = await superagent.get(`http://${backend}/stats`);
       const activePads = JSON.parse(stats.text).activePads;
       if (activePads === 0) {
         // console.log(`Free backend: ${backend} with ${activePads} active pads`);
         mostFreeBackend.activePads = activePads;
         mostFreeBackend.backend = backend;
-        return;
       }
-      if (activePads < mostFreeBackend.activePads) {
+      if (activePads <= mostFreeBackend.activePads) {
         // console.log(`Free backend: ${backend} with ${activePads} active pads`);
         mostFreeBackend.activePads = activePads;
         mostFreeBackend.backend = backend;
@@ -56,7 +55,7 @@ const mostFreeBackend = {
     ws: true,
   }, (req, res) => {
     const searchParams = new URLSearchParams(req.url);
-    let target = 'ws://localhost:9001';
+    let target = `ws://${backends[0]}`;
     const padId = searchParams.get('/socket.io/?padId');
     if (padId) {
       db.get(`padId:${padId}`, (e, backend) => {
@@ -67,7 +66,7 @@ const mostFreeBackend = {
           console.log(`Associating ${padId} with new backend`);
           // no association exists, we must make one
           db.set(`padId:${padId}`, {
-            target: 'ws://localhost:9002',
+            target: `ws://${mostFreeBackend.backend}`,
           });
         }
       });
