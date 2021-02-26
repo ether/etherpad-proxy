@@ -2,51 +2,50 @@
 
 const http = require('http');
 const httpProxy = require('http-proxy');
-const url = require('url');
 const proxy = httpProxy.createProxyServer();
 const ueberdb = require('ueberdb2');
-const db = new ueberdb.Database('dirty', {filename: 'var/dirty.db'});
 
-proxy.on('error', function(e){
-  console.error("Error", e);
-})
+(async () => {
+  const db = new ueberdb.Database('dirty', {filename: './dirty.db'});
+  await db.init();
 
-// example associations, this will be replaced with ueber at some point
-const assocs = {
-  'test1': 'ws://localhost:9001',
-  'test2': 'ws://localhost:9002',
-};
-
-const proxyServer = http.createServer(
-  {
-    ws: true,
-  }, function (req, res) {
-  const parsedURL = url.parse(req.url, true);
-  let target = 'ws://localhost:9001';
-  if (parsedURL.query && parsedURL.query.padId) {
-    const padId = parsedURL.query.padId;
-    if (assocs[padId]) {
-      target = assocs[padId];
-    }
-  }
-  proxy.web(req, res, {
-    target,
+  proxy.on('error', (e) => {
+    console.error('Error', e);
   });
-}).listen(9000);
 
-//
-// Listen to the `upgrade` event and proxy the
-// WebSocket requests as well.
-//
-// proxyServer.on('upgrade', function (req, socket, head) {
-//   proxy.ws(req, socket, head);
-// });
+  const proxyServer = http.createServer({
+    ws: true,
+  }, (req, res) => {
+  // NOTE TO SELF: putting async here is probably a terrible idea!
+    const searchParams = new URLSearchParams(req.url);
+    let target = 'ws://localhost:9001';
+    const padId = searchParams.get('/socket.io/?padId');
+    if (padId) {
+      db.get(`padId:${padId}`, (e, backend) => {
+        if (backend) {
+          // association exists already :)
+          target = backend.target;
+        } else {
+          console.log(`Associating ${padId} with new backend`);
+          // no association exists, we must make one
+          db.set(`padId:${padId}`, {
+            target: 'ws://localhost:9002',
+          });
+        }
+        console.log('!backend after!', backend);
+      });
+    }
+    proxy.web(req, res, {
+      target,
+    });
+  }).listen(9000);
 
-proxyServer.on('error', function(e){
-  console.error('proxy server error')
-})
+  proxyServer.on('error', (e) => {
+    console.error('proxy server error');
+  });
 
-proxy.on('close', function (res, socket, head) {
+  proxy.on('close', (res, socket, head) => {
   // view disconnected websocket connections
-  console.log('Client disconnected');
-});
+    console.log('Client disconnected');
+  });
+})();
