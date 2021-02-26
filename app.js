@@ -4,6 +4,45 @@ const http = require('http');
 const httpProxy = require('http-proxy');
 const proxy = httpProxy.createProxyServer();
 const ueberdb = require('ueberdb2');
+const superagent = require('superagent');
+
+// Check instance availability once a second
+const checkAvailabilityInterval = 1000;
+
+// Hard coded backends for now.
+const backends = [
+  'http://localhost:9001',
+  'http://localhost:9002',
+];
+
+const mostFreeBackend = {
+  activePads: 0,
+  backend: backends[0],
+};
+
+(async () => {
+  setInterval(async () => {
+    console.log(mostFreeBackend);
+    // every second check every backend
+    for (const backend of backends) {
+      // query if it's free
+      const stats = await superagent.get(`${backend}/stats`);
+      const activePads = JSON.parse(stats.text).activePads;
+      if (activePads === 0) {
+        // console.log(`Free backend: ${backend} with ${activePads} active pads`);
+        mostFreeBackend.activePads = activePads;
+        mostFreeBackend.backend = backend;
+        return;
+      }
+      if (activePads < mostFreeBackend.activePads) {
+        // console.log(`Free backend: ${backend} with ${activePads} active pads`);
+        mostFreeBackend.activePads = activePads;
+        mostFreeBackend.backend = backend;
+        return;
+      }
+    }
+  }, checkAvailabilityInterval);
+})();
 
 (async () => {
   const db = new ueberdb.Database('dirty', {filename: './dirty.db'});
@@ -16,7 +55,6 @@ const ueberdb = require('ueberdb2');
   const proxyServer = http.createServer({
     ws: true,
   }, (req, res) => {
-  // NOTE TO SELF: putting async here is probably a terrible idea!
     const searchParams = new URLSearchParams(req.url);
     let target = 'ws://localhost:9001';
     const padId = searchParams.get('/socket.io/?padId');
@@ -32,7 +70,6 @@ const ueberdb = require('ueberdb2');
             target: 'ws://localhost:9002',
           });
         }
-        console.log('!backend after!', backend);
       });
     }
     proxy.web(req, res, {
