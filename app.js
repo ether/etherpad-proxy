@@ -21,35 +21,8 @@ const mostFreeBackend = {
 };
 
 (async () => {
-  setInterval(async () => {
-    console.log(mostFreeBackend);
-    // every second check every backend
-    for (const backend of backends) {
-      // query if it's free
-      const stats = await superagent.get(`http://${backend}/stats`);
-      const activePads = JSON.parse(stats.text).activePads;
-      if (activePads === 0) {
-        // console.log(`Free backend: ${backend} with ${activePads} active pads`);
-        mostFreeBackend.activePads = activePads;
-        mostFreeBackend.backend = backend;
-      }
-      if (activePads <= mostFreeBackend.activePads) {
-        // console.log(`Free backend: ${backend} with ${activePads} active pads`);
-        mostFreeBackend.activePads = activePads;
-        mostFreeBackend.backend = backend;
-        return;
-      }
-    }
-  }, checkAvailabilityInterval);
-})();
-
-(async () => {
   const db = new ueberdb.Database('dirty', {filename: './dirty.db'});
   await db.init();
-
-  proxy.on('error', (e) => {
-    console.error('Error', e);
-  });
 
   const proxyServer = http.createServer({
     ws: true,
@@ -63,7 +36,7 @@ const mostFreeBackend = {
           // association exists already :)
           target = backend.target;
         } else {
-          console.log(`Associating ${padId} with new backend`);
+          console.log(`Associating ${padId} with ${mostFreeBackend.backend}`);
           // no association exists, we must make one
           db.set(`padId:${padId}`, {
             target: `ws://${mostFreeBackend.backend}`,
@@ -84,4 +57,35 @@ const mostFreeBackend = {
   // view disconnected websocket connections
     console.log('Client disconnected');
   });
+
+  proxy.on('error', (e) => {
+    console.error('Error', e);
+  });
 })();
+
+
+// TODO: I think some of this logic isn't quite right as the value never seems to increase
+const checkAvailability = () => {
+  setInterval(async () => {
+    console.log(mostFreeBackend);
+    for (const backend of backends) {
+      // query if it's free
+      const stats = await superagent.get(`http://${backend}/stats`);
+      const activePads = JSON.parse(stats.text).activePads;
+      if (activePads === 0) {
+        // console.log(`Free backend: ${backend} with ${activePads} active pads`);
+        mostFreeBackend.activePads = activePads;
+        mostFreeBackend.backend = backend;
+      }
+      if (activePads <= mostFreeBackend.activePads) {
+        // console.log(`Free backend: ${backend} with ${activePads} active pads`);
+        mostFreeBackend.activePads = activePads;
+        mostFreeBackend.backend = backend;
+        return;
+      }
+    }
+  }, checkAvailabilityInterval);
+};
+
+// every second check every backend to see which has the most availability.
+checkAvailability();

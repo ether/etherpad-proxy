@@ -10,4 +10,5 @@ Currently tests against two backends on http://localhost:9001 and http://localho
 - [x] Test performance using loadTest tool - confirmed positive impact
 - [x] Use database for persistence
 - [x] Check which backends are free using /stats
+- [ ] Test Coverage
 - [ ] API to create/destroy backends
