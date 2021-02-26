@@ -8,6 +8,6 @@ Currently tests against two backends on http://localhost:9001 and http://localho
 
 ## TODO
 - [x] Test performance using loadTest tool - confirmed positive impact
-- [ ] Use database for persistence
-- [ ] Check which backends are free using /stats
+- [x] Use database for persistence
+- [x] Check which backends are free using /stats
 - [ ] API to create/destroy backends
