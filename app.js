@@ -6,13 +6,13 @@ const url = require('url');
 const proxy = httpProxy.createProxyServer();
 
 proxy.on('error', function(e){
-  console.error("Error", e)
+  console.error("Error", e);
 })
 
 // example associations, this will be replaced with ueber at some point
 const assocs = {
-  'test1': 'http://localhost:9001',
-  'test2': 'http://localhost:9002',
+  'test1': 'ws://localhost:9001',
+  'test2': 'ws://localhost:9002',
 };
 
 const proxyServer = http.createServer(
@@ -20,7 +20,7 @@ const proxyServer = http.createServer(
     ws: true,
   }, function (req, res) {
   const parsedURL = url.parse(req.url, true);
-  let target = 'http://localhost:9001';
+  let target = 'ws://localhost:9001';
   if (parsedURL.query && parsedURL.query.padId) {
     const padId = parsedURL.query.padId;
     if (assocs[padId]) {
@@ -28,7 +28,7 @@ const proxyServer = http.createServer(
     }
   }
   proxy.web(req, res, {
-    target
+    target,
   });
 }).listen(9000);
 
@@ -36,6 +36,15 @@ const proxyServer = http.createServer(
 // Listen to the `upgrade` event and proxy the
 // WebSocket requests as well.
 //
-proxyServer.on('upgrade', function (req, socket, head) {
-  proxy.ws(req, socket, head);
+// proxyServer.on('upgrade', function (req, socket, head) {
+//   proxy.ws(req, socket, head);
+// });
+
+proxyServer.on('error', function(e){
+  console.error('proxy server error')
+})
+
+proxy.on('close', function (res, socket, head) {
+  // view disconnected websocket connections
+  console.log('Client disconnected');
 });
