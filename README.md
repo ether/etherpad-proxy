@@ -1,4 +1,4 @@
-# Reverse Proxy for Etherad
+# Reverse Proxy for Etherpad
 
 Runs A reverse proxy on port 9000 which will route pads based on padId to a pool of backends.
 
