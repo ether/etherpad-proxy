@@ -26,6 +26,9 @@ jobs:
       with:
         node-version: ${{ matrix.node }}
 
+    - name: install dependencies
+      run: npm i
+
       # install and run etherpad twice on 9001 and 9002
     - name: Git clone etherpad to test1
       run: git clone https://github.com/ether/etherpad-lite.git test1
@@ -34,7 +37,7 @@ jobs:
       run: cd test1 && cd src && npm i --no-optional && node ../../../node/server.js &
 
     - name: Git clone etherpad to test2
-      run: git clone https://github.com/ether/etherpad-lite.git test2
+      run: cd .. && git clone https://github.com/ether/etherpad-lite.git test2
 
     - name: Enter in test2
       run: cd test2
