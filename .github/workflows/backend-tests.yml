@@ -39,7 +39,7 @@ jobs:
 
     - name: Change port to 9002
       # "port" : 9001 >> "port" :9002
-      run: sed 's/9001/9002/g' test2/settings.json.template test2/settings.json
+      run: sed 's/9001/9002/g' test2/settings.json.template > test2/settings.json
 
     - name: start etherpad >> test2
       run: cd test2/src && npm i --no-optional && node src/node/server.js &
