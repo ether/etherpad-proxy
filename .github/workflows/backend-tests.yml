@@ -53,7 +53,7 @@ jobs:
     - name: Install etherpad-load-test
       run: npm install etherpad-load-test -g
 
-    - name: Wait For test2 to start
+    - name: Wait For test2 instance to start
       uses: nev7n/wait_for_response@v1
       with:
         url: 'http://localhost:9002/'
@@ -62,6 +62,11 @@ jobs:
 
     - name: Load test >> test1
       run: etherpad-loadtest http://localhost:9000/p/test1 -d 60 &
+
+    - name: Sleep for 5 seconds
+      uses: jakejarvis/wait-action@master
+      with:
+        time: '5s'
 
     - name: Load test >> test2
       run: etherpad-loadtest http://localhost:9000/p/test2 -d 60 &
