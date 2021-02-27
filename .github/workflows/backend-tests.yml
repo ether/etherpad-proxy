@@ -63,19 +63,16 @@ jobs:
     - name: Load test >> test1
       run: etherpad-loadtest http://localhost:9000/p/test1 -d 60 &
 
-    - name: Sleep for 5 seconds
+    - name: Sleep for 10 seconds
       uses: jakejarvis/wait-action@master
       with:
-        time: '5s'
+        time: '10s'
 
     - name: Load test >> test2
       run: etherpad-loadtest http://localhost:9000/p/test2 -d 60 &
 
     - name: check test1
-      run: wc -l test1/var/dirty.db
-
-    - name: check test2
-      run: wc -l test2/var/dirty.db
+      run: cat test1/var/dirty.db
 
     - name: check test2
       run: cat test2/var/dirty.db
