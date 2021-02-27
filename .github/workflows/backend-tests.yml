@@ -37,7 +37,7 @@ jobs:
     - name: Git clone etherpad to test2
       run: git clone https://github.com/ether/etherpad-lite.git test2
 
-      name: Change port to 9002
+    - name: Change port to 9002
       run: |
             powershell -Command "(gc test2/settings.json.template) -replace '\"port\": 9001', '\"port\": 9002' | Out-File -encoding ASCII test2/settings.json"
 
