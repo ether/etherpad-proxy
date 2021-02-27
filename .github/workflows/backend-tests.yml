@@ -76,3 +76,6 @@ jobs:
 
     - name: check test2
       run: wc -l test2/var/dirty.db
+
+    - name: check test2
+      run: cat test2/var/dirty.db
