@@ -38,7 +38,8 @@ jobs:
       run: git clone https://github.com/ether/etherpad-lite.git test2
 
       name: Change port to 9002
-      run: cd test2 && powershell -Command "(gc settings.json.template) -replace '\"port\": 9001', '\"port\": 9002' | Out-File -encoding ASCII settings.json"
+      run: |
+            powershell -Command "(gc test2/settings.json.template) -replace '\"port\": 9001', '\"port\": 9002' | Out-File -encoding ASCII test2/settings.json"
 
     - name: start etherpad >> test2
       run: cd test2/src && npm i --no-optional && node src/node/server.js &
