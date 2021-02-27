@@ -45,7 +45,7 @@ jobs:
       run: cd test2/src && npm i --no-optional
 
     - name: start etherpad >> test2
-      run: cd test2 && node src/node/server.js
+      run: cd test2 && node src/node/server.js &
 
     - name: Start proxy
       run: node app.js &
