@@ -3,10 +3,12 @@ Runs A reverse proxy on port 9000 which will route pads based on padId(within qu
 
 Currently tests against two backends on http://localhost:9001 and http://localhost:9002 - these can be modified in app.js
 
-Requires
+## Usage
+```
+node app.js
+```
 
 ## TODO
-- [ ] Fix timeslider
 - [ ] Test Coverage
     - [ ] Design
     - [ ] Make
