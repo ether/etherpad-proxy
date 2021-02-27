@@ -51,16 +51,7 @@ jobs:
       run: npm install etherpad-load-test -g
 
     - name: Wait For test1 to start
-      uses: cygnetdigital/wait_for_response@v2.0.0
-      with:
-        url: 'http://localhost:9001/'
-        responseCode: '200,500'
-        timeout: 60000
-        interval: 1000
-
-
-    - name: Wait For test2 to start
-      uses: cygnetdigital/wait_for_response@v2.0.0
+      uses: nev7n/wait_for_response@v1
       with:
         url: 'http://localhost:9002/'
         responseCode: '200,500'
