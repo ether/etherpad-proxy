@@ -13,18 +13,13 @@ jobs:
     name: Something..
     runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-      matrix:
-        node: [10, 12, 14, 15]
-
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
 
     - uses: actions/setup-node@v2
       with:
-        node-version: ${{ matrix.node }}
+        node-version: 15
 
     - name: install dependencies
       run: npm i
@@ -37,7 +32,7 @@ jobs:
       run: cd test1 && cd src && npm i --no-optional && node ../../../node/server.js &
 
     - name: Git clone etherpad to test2
-      run: cd .. && git clone https://github.com/ether/etherpad-lite.git test2
+      run: cd .. && cd .. && git clone https://github.com/ether/etherpad-lite.git test2
 
     - name: Enter in test2
       run: cd test2
@@ -58,10 +53,10 @@ jobs:
       run: npm install etherpad-load-test -g
 
     - name: Load test >> test1
-      run: etherpad-loadtest http://localhost:9000/p/test1 &
+      run: etherpad-loadtest http://localhost:9000/p/test1 -d 60 &
 
     - name: Load test >> test2
-      run: etherpad-loadtest http://localhost:9000/p/test2 &
+      run: etherpad-loadtest http://localhost:9000/p/test2 -d 60 &
 
     - name: check test1
       run: dir test1/var/dirty.db
