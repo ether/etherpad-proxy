@@ -54,7 +54,6 @@ jobs:
       uses: nev7n/wait_for_response@v1
       with:
         url: 'http://localhost:9002/'
-        responseCode: '200,500'
         timeout: 60000
         interval: 1000
 
