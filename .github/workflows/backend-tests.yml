@@ -29,22 +29,19 @@ jobs:
       run: git clone https://github.com/ether/etherpad-lite.git test1
 
     - name: prep etherpad >> test1
-      run: cd ~/test1/src && npm i --no-optional
+      run: cd test1/src && npm i --no-optional
 
     - name: run test1
-      run: cd ~/test1 node src/node/server.js &
+      run: cd test1/src && node src/node/server.js &
 
     - name: Git clone etherpad to test2
-      run: cd ~ && git clone https://github.com/ether/etherpad-lite.git test2
+      run: git clone https://github.com/ether/etherpad-lite.git test2
 
       # name: Change port to 9002
       # run: powershell -Command "(gc settings.json.template) -replace '\"port\": 9001', '\"port\": 9002' | Out-File -encoding ASCII settings.json"
 
     - name: start etherpad >> test2
-      run: cd ~test2/src && npm i --no-optional && node src/node/server.js &
-
-    - name: return to root
-      run: cd ..
+      run: cd test2/src && npm i --no-optional && node src/node/server.js &
 
     - name: Start proxy
       run: node app.js &
