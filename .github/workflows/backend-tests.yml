@@ -41,8 +41,11 @@ jobs:
       # "port" : 9001 >> "port" :9002
       run: sed 's/9001/9002/g' test2/settings.json.template > test2/settings.json
 
+    - name: prep etherpad >> test2
+      run: cd test2/src && npm i --no-optional
+
     - name: start etherpad >> test2
-      run: cd test2/src && npm i --no-optional && node src/node/server.js
+      run: cd test2/src && node src/node/server.js
 
     - name: Start proxy
       run: node app.js &
