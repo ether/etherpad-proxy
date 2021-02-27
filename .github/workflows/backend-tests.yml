@@ -56,7 +56,7 @@ jobs:
       run: etherpad-loadtest http://localhost:9000/p/test2 -d 60 &
 
     - name: check test1
-      run: dir test1/var/dirty.db
+      run: dir test1
 
     - name: check test2
-      run: dir test2/var/dirty.db
+      run: dir test2
