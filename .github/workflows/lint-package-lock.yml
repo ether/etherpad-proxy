@@ -25,4 +25,4 @@ jobs:
       run: npm install lockfile-lint
 
     - name: Run lockfile-lint on package-lock.json
-      run: npx lockfile-lint --path src/package-lock.json --validate-https --allowed-hosts npm
+      run: npx lockfile-lint --path package-lock.json --validate-https --allowed-hosts npm
