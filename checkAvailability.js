@@ -29,6 +29,7 @@ exports.checkAvailability = () => {
         // console.log(`Free backend: ${backend} with ${activePads} active pads`);
         exports.mostFreeBackend.activePads = activePads;
         exports.mostFreeBackend.backend = backend;
+        return;
       }
       if (activePads <= exports.mostFreeBackend.activePads) {
         // console.log(`Free backend: ${backend} with ${activePads} active pads`);
