@@ -1,42 +1,34 @@
 'use strict';
 
 const ueberdb = require('ueberdb2');
-const superagent = require('superagent');
+const availability = require('./checkAvailability');
 let db;
 
-// Check instance availability once a second
-const checkAvailabilityInterval = 1000;
+// every second check every backend to see which has the most availability.
+availability.checkAvailability();
 
-// Hard coded backends for now.
-const backends = [
-  'localhost:9001',
-  'localhost:9002',
-];
-
-const mostFreeBackend = {
-  activePads: 0,
-  backend: backends[0],
-};
-
+// query database to see if we have a backend assigned for this padId
 const reqToBackend = (host, url, req) => {
   const searchParams = new URLSearchParams(req.url);
-  let backend = backends[0];
+  const backend = availability.backends[0];
   const padId = searchParams.get('/socket.io/?padId');
   if (!padId) return backend;
 
-  db.get(`padId:${padId}`, (e, databaseBackend) => {
-    if (databaseBackend) {
+  db.get(`padId:${padId}`, (e, result) => {
+    if (result) {
+      console.log('FOUND IN DB', result.backend);
       // association exists already :)
-      backend = databaseBackend.target;
+      return result.backend;
     } else {
-      console.log(`Associating ${padId} with ${mostFreeBackend.backend}`);
+      console.log(`Associating ${padId} with ${availability.mostFreeBackend.backend}`);
       // no association exists, we must make one
       db.set(`padId:${padId}`, {
-        backend: mostFreeBackend.backend,
+        backend: availability.mostFreeBackend.backend,
       });
+      return availability.mostFreeBackend.backend;
     }
   });
-
+  console.log('RETURNING', backend);
   return backend;
 };
 
@@ -53,33 +45,6 @@ require('redbird')({
   resolvers: [
     reqToBackend,
     // uses the same priority as default resolver, so will be called after default resolver
-    (host, url, req) => 'http://127.0.0.1:9001',
+    (host, url, req) => 'http://127.0.0.1:9002',
   ],
 });
-
-
-// TODO: I think some of this logic isn't quite right as the value never seems to increase
-const checkAvailability = () => {
-  setInterval(async () => {
-    console.log(mostFreeBackend);
-    for (const backend of backends) {
-      // query if it's free
-      const stats = await superagent.get(`http://${backend}/stats`);
-      const activePads = JSON.parse(stats.text).activePads;
-      if (activePads === 0) {
-        // console.log(`Free backend: ${backend} with ${activePads} active pads`);
-        mostFreeBackend.activePads = activePads;
-        mostFreeBackend.backend = backend;
-      }
-      if (activePads <= mostFreeBackend.activePads) {
-        // console.log(`Free backend: ${backend} with ${activePads} active pads`);
-        mostFreeBackend.activePads = activePads;
-        mostFreeBackend.backend = backend;
-        return;
-      }
-    }
-  }, checkAvailabilityInterval);
-};
-
-// every second check every backend to see which has the most availability.
-checkAvailability();
