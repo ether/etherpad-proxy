@@ -80,7 +80,7 @@ jobs:
       run: wc -l test2/var/dirty.db
 
     - name: check test1
-      run: test $( wc -l < test1/var/dirty.db ) -lt 1000
+      run: test $( wc -l < test1/var/dirty.db ) -gt 1000
 
     - name: check test2
-      run: test $( wc -l < test2/var/dirty.db ) -lt 1000
+      run: test $( wc -l < test2/var/dirty.db ) -gt 1000
