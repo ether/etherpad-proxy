@@ -1,10 +1,8 @@
 'use strict';
 
-const http = require('http');
-const httpProxy = require('http-proxy');
-const proxy = httpProxy.createProxyServer();
 const ueberdb = require('ueberdb2');
 const superagent = require('superagent');
+let db;
 
 // Check instance availability once a second
 const checkAvailabilityInterval = 1000;
@@ -20,48 +18,44 @@ const mostFreeBackend = {
   backend: backends[0],
 };
 
-(async () => {
-  const db = new ueberdb.Database('dirty', {filename: './dirty.db'});
-  await db.init();
+const reqToBackend = (host, url, req) => {
+  const searchParams = new URLSearchParams(req.url);
+  let backend = backends[0];
+  const padId = searchParams.get('/socket.io/?padId');
+  if (!padId) return backend;
 
-  const proxyServer = http.createServer({
-    ws: true,
-  }, (req, res) => {
-    const searchParams = new URLSearchParams(req.url);
-    let target = `ws://${backends[0]}`;
-    const padId = searchParams.get('/socket.io/?padId');
-    if (padId) {
-      db.get(`padId:${padId}`, (e, backend) => {
-        if (backend) {
-          // association exists already :)
-          target = backend.target;
-        } else {
-          console.log(`Associating ${padId} with ${mostFreeBackend.backend}`);
-          // no association exists, we must make one
-          db.set(`padId:${padId}`, {
-            target: `ws://${mostFreeBackend.backend}`,
-          });
-        }
+  db.get(`padId:${padId}`, (e, databaseBackend) => {
+    if (databaseBackend) {
+      // association exists already :)
+      backend = databaseBackend.target;
+    } else {
+      console.log(`Associating ${padId} with ${mostFreeBackend.backend}`);
+      // no association exists, we must make one
+      db.set(`padId:${padId}`, {
+        backend: mostFreeBackend.backend,
       });
     }
-    proxy.web(req, res, {
-      target,
-    });
-  }).listen(9000);
-
-  proxyServer.on('error', (e) => {
-    console.error('proxy server error');
   });
 
-  proxy.on('close', (res, socket, head) => {
-  // view disconnected websocket connections
-    console.log('Client disconnected');
-  });
+  return backend;
+};
 
-  proxy.on('error', (e) => {
-    console.error('Error', e);
-  });
+// assign high priority
+reqToBackend.priority = 100;
+
+(async () => {
+  db = new ueberdb.Database('dirty', {filename: './dirty.db'});
+  await db.init();
 })();
+
+require('redbird')({
+  port: 9000,
+  resolvers: [
+    reqToBackend,
+    // uses the same priority as default resolver, so will be called after default resolver
+    (host, url, req) => 'http://127.0.0.1:9001',
+  ],
+});
 
 
 // TODO: I think some of this logic isn't quite right as the value never seems to increase

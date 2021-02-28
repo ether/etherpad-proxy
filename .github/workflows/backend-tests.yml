@@ -29,7 +29,8 @@ jobs:
       run: git clone https://github.com/ether/etherpad-lite.git test1
 
     - name: prep etherpad >> test1
-      run: cd test1/src && npm i --no-optional
+      run: cd test1/src && git checkout socket-namespace && npm i --no-optional
+      ## TODO REMOVE socket-namespace once merged!
 
     - name: start etherpad >> test1
       run: cd test1 && node src/node/server.js &
@@ -42,7 +43,8 @@ jobs:
       run: sed 's/9001/9002/g' test2/settings.json.template > test2/settings.json
 
     - name: prep etherpad >> test2
-      run: cd test2/src && npm i --no-optional
+      run: cd test2/src && git checkout socket-namespace && npm i --no-optional
+      ## TODO REMOVE socket-namespace once merged!
 
     - name: start etherpad >> test2
       run: cd test2 && node src/node/server.js &
