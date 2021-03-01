@@ -18,3 +18,5 @@ node app.js
 - [ ] Working Load Balancing
 - [ ] Test in production
 - [ ] API to create/destroy backends
+- [ ] Consider if multiple backends should serve static files or fall back to 9001 (as per current)
+- [ ] Don't die on failure to connect to backend
