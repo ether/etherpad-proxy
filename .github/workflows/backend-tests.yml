@@ -76,8 +76,14 @@ jobs:
     - name: check test1
       run: wc -l test1/var/dirty.db
 
+    - name: check test1
+      run: cat test1/var/dirty.db
+
     - name: check test2
       run: wc -l test2/var/dirty.db
+
+    - name: check test2
+      run: cat test2/var/dirty.db
 
     - name: check test1
       run: test $( wc -l < test1/var/dirty.db ) -gt 1000
