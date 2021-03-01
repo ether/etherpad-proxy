@@ -6,6 +6,7 @@ const httpProxy = require('http-proxy');
 const http = require('http');
 let db;
 
+/* eslint-disable-next-line new-cap */
 const proxyOne = new httpProxy.createProxyServer({
   target: {
     host: 'localhost',
@@ -13,6 +14,7 @@ const proxyOne = new httpProxy.createProxyServer({
   },
 });
 
+/* eslint-disable-next-line new-cap */
 const proxyTwo = new httpProxy.createProxyServer({
   target: {
     host: 'localhost',
@@ -21,7 +23,6 @@ const proxyTwo = new httpProxy.createProxyServer({
 });
 
 const proxyServer = http.createServer((req, res) => {
-  console.log(req);
   const backend = reqToBackend(req);
   if (backend === 'localhost:9001') {
     proxyOne.web(req, res);
@@ -30,6 +31,27 @@ const proxyServer = http.createServer((req, res) => {
     proxyTwo.web(req, res);
   }
 });
+
+proxyServer.on('error', (e) => {
+  console.log('proxyserver error', e);
+});
+
+proxyOne.on('error', (e, req, res) => {
+  console.log('proxyOne error', e);
+  res.writeHead(500, {
+    'Content-Type': 'text/plain',
+  });
+  res.end('Something went wrong. And we are reporting a custom error message.');
+});
+
+proxyTwo.on('error', (e, req, res) => {
+  console.log('proxyTwo error', e);
+  res.writeHead(500, {
+    'Content-Type': 'text/plain',
+  });
+  res.end('Something went wrong. And we are reporting a custom error message.');
+});
+
 
 //
 // Listen to the `upgrade` event and proxy the
@@ -68,7 +90,7 @@ const reqToBackend = (req) => {
 
   db.get(`padId:${padId}`, (e, result) => {
     if (result) {
-      console.log('FOUND IN DB', result.backend);
+      console.log(`Found in Databas ${result.backend}`);
       // association exists already :)
       backend = result.backend;
     } else {

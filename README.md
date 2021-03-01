@@ -14,9 +14,16 @@ It's likely that this project will only get to proof of concept stage and then s
 node app.js
 ```
 
-## TODO
+## V0
 - [ ] Working Load Balancing
+
+## V1
+- [ ] Abstract http-proxy out / introduce support for other proxy software/services.
 - [ ] Test in production
-- [ ] API to create/destroy backends
+- [ ] API to create/destroy backends - REF: https://github.com/colyseus/proxy/blob/master/proxy.ts
+
+## V2
 - [ ] Consider if multiple backends should serve static files or fall back to 9001 (as per current)
-- [ ] Don't die on failure to connect to backend
+    - Advantage of single point = Only have to update plugin files there.
+    - Disadvantage - single point of failure, plugins might be out of sync, plugin backend/frontend might bt out of sync.
+    - Conclusion: I think a pads static content should come from where it gets it's content from, but then there are more complications especially surrounding export URIs..  
