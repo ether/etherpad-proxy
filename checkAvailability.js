@@ -24,18 +24,18 @@ exports.checkAvailability = () => {
     for (const backend of exports.backends) {
       // query if it's free
       const stats = await superagent.get(`http://${backend}/stats`);
-      const activePads = JSON.parse(stats.text).activePads;
+      const activePads = JSON.parse(stats.text).activePads || 0;
       if (activePads === 0) {
         // console.log(`Free backend: ${backend} with ${activePads} active pads`);
         exports.mostFreeBackend.activePads = activePads;
         exports.mostFreeBackend.backend = backend;
-        return;
+        break;
       }
       if (activePads <= exports.mostFreeBackend.activePads) {
         // console.log(`Free backend: ${backend} with ${activePads} active pads`);
         exports.mostFreeBackend.activePads = activePads;
         exports.mostFreeBackend.backend = backend;
-        return;
+        break;
       }
     }
   }, checkAvailabilityInterval);

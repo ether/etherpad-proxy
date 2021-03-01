@@ -76,7 +76,7 @@ availability.checkAvailability();
 // query database to see if we have a backend assigned for this padId
 const reqToBackend = (req) => {
   let padId;
-  let backend = availability.backends[0];
+  let backend = availability.mostFreeBackend.backend;
   // if it's a normal pad URL IE static file
   if (req.url.indexOf('/p/') !== -1) {
     padId = req.url.split('/p/')[1];
