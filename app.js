@@ -2,38 +2,41 @@
 
 const httpProxy = require('http-proxy');
 const http = require('http');
+const backends = [{
+  host: 'localhost',
+  port: 9001,
+}, {
+  host: 'localhost',
+  port: 9002,
+}];
 
-/* eslint-disable-next-line new-cap */
-const proxyOne = new httpProxy.createProxyServer({
-  target: {
-    host: 'localhost',
-    port: 9001,
-  },
-});
+const proxies = {};
 
-/* eslint-disable-next-line new-cap */
-const proxyTwo = new httpProxy.createProxyServer({
-  target: {
-    host: 'localhost',
-    port: 9002,
-  },
-});
+for (const backendId in backends) {
+  /* eslint-disable-next-line new-cap */
+  proxies[backendId] = new httpProxy.createProxyServer({
+    target: {
+      host: backends[backendId].host,
+      port: backends[backendId].port,
+    },
+  });
+}
 
 const proxyServer = http.createServer((req, res) => {
   const searchParams = new URLSearchParams(req.url);
   const padId = searchParams.get('/socket.io/?padId');
   if (padId === 'test1') {
-    proxyOne.web(req, res);
+    proxies[0].web(req, res);
   }
   if (padId === 'test2') {
-    proxyTwo.web(req, res);
+    proxies[1].web(req, res);
   }
 });
 
 proxyServer.on('error', (e) => {
   console.log('proxyserver error', e);
 });
-
+/*
 proxyOne.on('error', (e, req, res) => {
   console.log('proxyOne error', e);
   res.writeHead(500, {
@@ -49,7 +52,7 @@ proxyTwo.on('error', (e, req, res) => {
   });
   res.end('Something went wrong. And we are reporting a custom error message.');
 });
-
+*/
 
 //
 // Listen to the `upgrade` event and proxy the
@@ -59,10 +62,10 @@ proxyServer.on('upgrade', (req, socket, head) => {
   const searchParams = new URLSearchParams(req.url);
   const padId = searchParams.get('/socket.io/?padId');
   if (padId === 'test1') {
-    proxyOne.ws(req, socket, head);
+    proxies[0].ws(req, socket, head);
   }
   if (padId === 'test2') {
-    proxyTwo.ws(req, socket, head);
+    proxies[1].ws(req, socket, head);
   }
 });
 
