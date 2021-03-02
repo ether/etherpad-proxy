@@ -1,2 +1,2 @@
-{"key":"padId:test2","val":{"backend":"localhost:9002"}}
-{"key":"padId:test1","val":{"backend":"localhost:9001"}}
+{"key":"padId:test2","val":{"backend":"backend2"}}
+{"key":"padId:test1","val":{"backend":"backend1"}}

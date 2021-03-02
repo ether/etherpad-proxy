@@ -3,18 +3,20 @@
 const httpProxy = require('http-proxy');
 const http = require('http');
 const ueberdb = require('ueberdb2');
-const backends = [{
-  host: 'localhost',
-  port: 9001,
-}, {
-  host: 'localhost',
-  port: 9002,
-}];
+const backends = {
+  backend1: {
+    host: 'localhost',
+    port: 9001,
+  },
+  backend2: {
+    host: 'localhost',
+    port: 9002,
+  },
+};
 
 const proxies = {};
 const db = new ueberdb.Database('dirty', {filename: './dirty.db'});
 db.init(() => {
-  console.log(db);
   // Create the backends.
   for (const backendId of Object.keys(backends)) {
     /* eslint-disable-next-line new-cap */
@@ -29,13 +31,16 @@ db.init(() => {
   const proxyServer = http.createServer((req, res) => {
     const searchParams = new URLSearchParams(req.url);
     const padId = searchParams.get('/socket.io/?padId');
+    db.get(`padId:${padId}`, (e, r) => {
+      if (r) console.log('found', r.backend);
+    });
     if (padId === 'test1') {
-      proxies[0].web(req, res, (e) => {
+      proxies.backend1.web(req, res, (e) => {
         console.error(e);
       });
     }
     if (padId === 'test2') {
-      proxies[1].web(req, res, (e) => {
+      proxies.backend2.web(req, res, (e) => {
         console.error(e);
       });
     }
@@ -49,14 +54,13 @@ db.init(() => {
     const searchParams = new URLSearchParams(req.url);
     const padId = searchParams.get('/socket.io/?padId');
     if (padId === 'test1') {
-      proxies[0].ws(req, socket, head);
+      proxies.backend1.ws(req, socket, head);
     }
     if (padId === 'test2') {
-      proxies[1].ws(req, socket, head);
+      proxies.backend2.ws(req, socket, head);
     }
   });
 
   // Finally listen on port 9000 :)
   proxyServer.listen(9000);
-
-})
+});
