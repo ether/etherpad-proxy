@@ -83,10 +83,20 @@ jobs:
     - name: Load test >> test2
       run: etherpad-loadtest http://localhost:9000/p/test2 -d 60 &
 
+    - name: Sleep for 10 seconds
+      uses: jakejarvis/wait-action@master
+      with:
+        time: '10s'
+
     ## No static paths or associations should exist for test3, it should hit test3 because
     ## All other Etherpad instances are busy :)
     - name: Load test >> test3
       run: etherpad-loadtest http://localhost:9000/p/test3 -d 60 &
+
+    - name: Sleep for 10 seconds
+      uses: jakejarvis/wait-action@master
+      with:
+        time: '10s'
 
     - name: check test1
       run: cat test1/var/dirty.db | grep test1
