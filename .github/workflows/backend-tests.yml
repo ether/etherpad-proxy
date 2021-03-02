@@ -55,12 +55,8 @@ jobs:
     - name: Install etherpad-load-test
       run: npm install etherpad-load-test -g
 
-    - name: Wait For test2 instance to start
-      uses: nev7n/wait_for_response@v1
-      with:
-        url: 'http://localhost:9002/'
-        timeout: 60000
-        interval: 1000
+    - name: wait for Etherpad
+      run: curl --connect-timeout 10 --max-time 20 --retry 5 --retry-delay 10 --retry-max-time 60 --retry-connrefused http://127.0.0.1:9002/p/test
 
     - name: Load test >> test1
       run: etherpad-loadtest http://localhost:9000/p/test1 -d 60 &
