@@ -16,6 +16,10 @@ const backends = {
     host: 'localhost',
     port: 9002,
   },
+  backend3: {
+    host: 'localhost',
+    port: 9003,
+  },
 };
 
 const proxies = {};

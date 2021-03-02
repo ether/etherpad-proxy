@@ -38,16 +38,30 @@ jobs:
     - name: Git clone etherpad to test2
       run: git clone https://github.com/ether/etherpad-lite.git test2
 
+    - name: Git clone etherpad to test2
+      run: git clone https://github.com/ether/etherpad-lite.git test3
+
     - name: Change port to 9002
       # "port" : 9001 >> "port" :9002
       run: sed 's/9001/9002/g' test2/settings.json.template > test2/settings.json
+
+    - name: Change port to 9003
+      # "port" : 9001 >> "port" :9002
+      run: sed 's/9001/9003/g' test3/settings.json.template > test3/settings.json
 
     - name: prep etherpad >> test2
       run: cd test2/src && git checkout socket-namespace && npm i --no-optional
       ## TODO REMOVE socket-namespace once merged!
 
+    - name: prep etherpad >> test3
+      run: cd test3/src && git checkout socket-namespace && npm i --no-optional
+      ## TODO REMOVE socket-namespace once merged!
+
     - name: start etherpad >> test2
       run: cd test2 && node src/node/server.js &
+
+    - name: start etherpad >> test3
+      run: cd test3 && node src/node/server.js &
 
     - name: Start proxy
       run: node app.js &
@@ -56,7 +70,7 @@ jobs:
       run: npm install etherpad-load-test -g
 
     - name: wait for Etherpad
-      run: curl --connect-timeout 10 --max-time 20 --retry 5 --retry-delay 10 --retry-max-time 60 --retry-connrefused http://127.0.0.1:9002/p/test
+      run: curl --connect-timeout 10 --max-time 20 --retry 5 --retry-delay 10 --retry-max-time 60 --retry-connrefused http://127.0.0.1:9003/p/test
 
     - name: Load test >> test1
       run: etherpad-loadtest http://localhost:9000/p/test1 -d 60 &
@@ -69,14 +83,34 @@ jobs:
     - name: Load test >> test2
       run: etherpad-loadtest http://localhost:9000/p/test2 -d 60 &
 
+    ## No static paths or associations should exist for test3, it should hit test3 because
+    ## All other Etherpad instances are busy :)
+    - name: Load test >> test3
+      run: etherpad-loadtest http://localhost:9000/p/test3 -d 60 &
+
     - name: check test1
       run: cat test1/var/dirty.db | grep test1
 
     - name: check test2
       run: cat test2/var/dirty.db | grep test2
 
-    - name: check test1
+    - name: check test3
+      run: cat test3/var/dirty.db | grep test3
+
+    - name: check test1 has no test 2
       run: test $( cat test1/var/dirty.db | grep test2 | wc -l ) -eq 0
 
-    - name: check test2
+    - name: check test1 has no test 3
+      run: test $( cat test1/var/dirty.db | grep test3 | wc -l ) -eq 0
+
+    - name: check test2 has no test 1
       run: test $( cat test2/var/dirty.db | grep test1 | wc -l ) -eq 0
+
+    - name: check test2 has no test 3
+      run: test $( cat test2/var/dirty.db | grep test3 | wc -l ) -eq 0
+
+    - name: check test3 has no test 1
+      run: test $( cat test3/var/dirty.db | grep test1 | wc -l ) -eq 0
+
+    - name: check test3 has no test 2
+      run: test $( cat test3/var/dirty.db | grep test2 | wc -l ) -eq 0
