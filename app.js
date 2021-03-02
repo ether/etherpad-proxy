@@ -3,6 +3,10 @@
 const httpProxy = require('http-proxy');
 const http = require('http');
 const ueberdb = require('ueberdb2');
+const checkAvailability = require('./checkAvailability').checkAvailability;
+
+const checkInterval = 1000;
+const maxPadsPerInstance = 1;
 const backends = {
   backend1: {
     host: 'localhost',
@@ -15,6 +19,12 @@ const backends = {
 };
 
 const proxies = {};
+let availableBackend = null;
+setInterval(async () => {
+  availableBackend = await checkAvailability(backends, checkInterval, maxPadsPerInstance);
+  console.log(availableBackend)
+}, checkInterval);
+
 const db = new ueberdb.Database('dirty', {filename: './dirty.db'});
 db.init(() => {
   // Create the backends.
@@ -36,6 +46,11 @@ db.init(() => {
         proxies[r.backend].web(req, res, (e) => {
           console.error(e);
         });
+      } else {
+        // if no backend is stored for this pad, create a new connection
+        db.set(`padId:${padId}`, {
+          backend: availableBackend,
+        });
       }
     });
   });
@@ -51,6 +66,11 @@ db.init(() => {
       if (r) {
         proxies[r.backend].ws(req, socket, head, (e) => {
           console.error(e);
+        });
+      } else {
+        // if no backend is stored for this pad, create a new connection
+        db.set(`padId:${padId}`, {
+          backend: availableBackend,
         });
       }
     });
