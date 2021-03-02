@@ -70,19 +70,13 @@ jobs:
       run: etherpad-loadtest http://localhost:9000/p/test2 -d 60 &
 
     - name: check test1
-      run: wc -l test1/var/dirty.db
+      run: cat test1/var/dirty.db | grep test1
+
+    - name: check test2
+      run: cat test2/var/dirty.db | grep test2
 
     - name: check test1
-      run: cat test1/var/dirty.db
+      run: test $( cat test1/var/dirty.db | grep test2 | wc -l ) -eq 0
 
     - name: check test2
-      run: wc -l test2/var/dirty.db
-
-    - name: check test2
-      run: cat test2/var/dirty.db
-
-    - name: check test1
-      run: test $( wc -l < test1/var/dirty.db ) -gt 1000
-
-    - name: check test2
-      run: test $( wc -l < test2/var/dirty.db ) -gt 1000
+      run: test $( cat test2/var/dirty.db | grep test1 | wc -l ) -eq 0
