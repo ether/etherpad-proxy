@@ -32,18 +32,12 @@ db.init(() => {
     const searchParams = new URLSearchParams(req.url);
     const padId = searchParams.get('/socket.io/?padId');
     db.get(`padId:${padId}`, (e, r) => {
-      if (r) console.log('found', r.backend);
+      if (r) {
+        proxies[r.backend].web(req, res, (e) => {
+          console.error(e);
+        });
+      }
     });
-    if (padId === 'test1') {
-      proxies.backend1.web(req, res, (e) => {
-        console.error(e);
-      });
-    }
-    if (padId === 'test2') {
-      proxies.backend2.web(req, res, (e) => {
-        console.error(e);
-      });
-    }
   });
   proxyServer.on('error', (e) => {
     console.log('proxyserver error', e);
@@ -53,12 +47,13 @@ db.init(() => {
   proxyServer.on('upgrade', (req, socket, head) => {
     const searchParams = new URLSearchParams(req.url);
     const padId = searchParams.get('/socket.io/?padId');
-    if (padId === 'test1') {
-      proxies.backend1.ws(req, socket, head);
-    }
-    if (padId === 'test2') {
-      proxies.backend2.ws(req, socket, head);
-    }
+    db.get(`padId:${padId}`, (e, r) => {
+      if (r) {
+        proxies[r.backend].ws(req, socket, head, (e) => {
+          console.error(e);
+        });
+      }
+    });
   });
 
   // Finally listen on port 9000 :)
