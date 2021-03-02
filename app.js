@@ -12,7 +12,7 @@ const backends = [{
 
 const proxies = {};
 
-for (const backendId in backends) {
+for (const backendId of Object.keys(backends)) {
   /* eslint-disable-next-line new-cap */
   proxies[backendId] = new httpProxy.createProxyServer({
     target: {
