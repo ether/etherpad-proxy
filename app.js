@@ -5,8 +5,15 @@ const http = require('http');
 const ueberdb = require('ueberdb2');
 const checkAvailability = require('./checkAvailability').checkAvailability;
 
+// the interval we check each Etherpad instance for it's availability.
 const checkInterval = 1000;
+
+// The maximum number of pads editable per Etherpad instance.  You will want to modify
+// this to a nicer value that suits your environment.  In the future it would be wise to
+// TODO: use a round robin approach
 const maxPadsPerInstance = 1;
+
+// hard coded backends - temporary herp derp
 const backends = {
   backend1: {
     host: 'localhost',
@@ -22,14 +29,20 @@ const backends = {
   },
 };
 
+// An object of our proxy instances
 const proxies = {};
+
+// Making availableBackend globally available.
 let availableBackend = null;
 setInterval(async () => {
   availableBackend = await checkAvailability(backends, checkInterval, maxPadsPerInstance);
 }, checkInterval);
 
+// Creating our databsae connection
+// TODO: allow settings to set the database type.
 const db = new ueberdb.Database('dirty', {filename: './dirty.db'});
 
+// Initiate the proxy routes to the backends
 const initiateRoute = (backend, req, res, socket, head) => {
   if (res) {
     proxies[backend].web(req, res, (e) => {
@@ -43,6 +56,8 @@ const initiateRoute = (backend, req, res, socket, head) => {
   }
 };
 
+// Create dynamically assigned routes based on padIds and ensure that a route for
+// unique padIds are re-used and stuck to a backend -- padId <> backend association.
 const createRoute = (padId, req, res, socket, head) => {
   // If the route isn't for a specific padID IE it's for a static file
   // we can use any of the backends but now let's use the first :)
