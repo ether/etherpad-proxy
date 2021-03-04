@@ -64,7 +64,7 @@ const createRoute = (padId, req, res, socket, head) => {
   // we can use any of the backends but now let's use the first :)
   // TODO: Use round robin or so.
   if (!padId) {
-    return initiateRoute('backend1', req, res, socket, head);
+    return initiateRoute(Object.keys(backends)[0], req, res, socket, head);
   }
 
   // pad specific backend required, do we have a backend already?
@@ -74,14 +74,14 @@ const createRoute = (padId, req, res, socket, head) => {
       initiateRoute(r.backend, req, res, socket, head);
     } else {
       // TODO remove this hard coding;
-      if (!availableBackend) availableBackend = 'backend1';
+      if (!availableBackend) availableBackend = Object.keys(backends)[0];
       // if no backend is stored for this pad, create a new connection
       db.set(`padId:${padId}`, {
         backend: availableBackend,
       });
       console.log(`database miss: ${padId} <> ${availableBackend}`);
       // TODO: Don't use hard coded backend 1 here.
-      initiateRoute(availableBackend || 'backend1', req, res, socket, head);
+      initiateRoute(availableBackend || Object.keys(backends)[0], req, res, socket, head);
     }
   });
 };
