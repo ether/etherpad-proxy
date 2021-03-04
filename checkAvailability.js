@@ -17,7 +17,7 @@ exports.checkAvailability = async (backends, interval, maxPadsPerInstance) => {
       console.log(`available backend: ${backendId}: ${activePads}`);
       return backendId;
     } else {
-      console.log(`delete backend: ${backendId}: ${activePads}`);
+      // console.log(`delete backend: ${backendId}: ${activePads}`);
       // TODO: Make it so it deletes a backend from random stuff
       // delete backends.backendId;
     }

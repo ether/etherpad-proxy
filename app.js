@@ -45,6 +45,7 @@ const db = new ueberdb.Database('dirty', {filename: './dirty.db'});
 // Initiate the proxy routes to the backends
 const initiateRoute = (backend, req, res, socket, head) => {
   if (res) {
+    console.log('backend: ', backend);
     proxies[backend].web(req, res, (e) => {
       console.error(e);
     });
@@ -72,6 +73,8 @@ const createRoute = (padId, req, res, socket, head) => {
       console.log(`database hit: ${padId} <> ${r.backend}`);
       initiateRoute(r.backend, req, res, socket, head);
     } else {
+      // TODO remove this hard coding;
+      if (!availableBackend) availableBackend = 'backend1';
       // if no backend is stored for this pad, create a new connection
       db.set(`padId:${padId}`, {
         backend: availableBackend,
