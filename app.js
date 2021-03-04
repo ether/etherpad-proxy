@@ -5,7 +5,7 @@ const http = require('http');
 const ueberdb = require('ueberdb2');
 const checkAvailability = require('./checkAvailability').checkAvailability;
 
-const checkInterval = 10;
+const checkInterval = 1000;
 const maxPadsPerInstance = 1;
 const backends = {
   backend1: {
@@ -44,15 +44,23 @@ const initiateRoute = (backend, req, res, socket, head) => {
 };
 
 const createRoute = (padId, req, res, socket, head) => {
+  // If the route isn't for a specific padID IE it's for a static file
+  // we can use any of the backends but now let's use the first :)
+  if (!padId) {
+    return initiateRoute('backend1', req, res, socket, head);
+  }
+
+  // pad specific backend required, do we have a backend already?
   db.get(`padId:${padId}`, (e, r) => {
     if (r && r.backend) {
+      console.log(`database hit: ${padId} <> ${r.backend}`);
       initiateRoute(r.backend, req, res, socket, head);
     } else {
       // if no backend is stored for this pad, create a new connection
-      console.log('availableBackend', availableBackend);
       db.set(`padId:${padId}`, {
         backend: availableBackend,
       });
+      console.log(`database miss: ${padId} <> ${availableBackend}`);
       initiateRoute(availableBackend, req, res, socket, head);
     }
   });
@@ -71,8 +79,13 @@ db.init(() => {
   }
   // Create the routes for web traffic to those backends.
   const proxyServer = http.createServer((req, res) => {
+    let padId;
+    if (req.url.indexOf('/p/') !== -1) {
+      padId = req.url.split('/p/')[1].split('?')[0];
+      console.log(`initial request to /p/${padId}`);
+    }
     const searchParams = new URLSearchParams(req.url);
-    const padId = searchParams.get('/socket.io/?padId');
+    padId = searchParams.get('/socket.io/?padId');
     createRoute(padId, req, res, null, null);
   });
 
