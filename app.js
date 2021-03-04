@@ -22,7 +22,7 @@ const proxies = {};
 let availableBackend = null;
 setInterval(async () => {
   availableBackend = await checkAvailability(backends, checkInterval, maxPadsPerInstance);
-  console.log(availableBackend)
+  console.log(availableBackend);
 }, checkInterval);
 
 const db = new ueberdb.Database('dirty', {filename: './dirty.db'});
@@ -42,7 +42,7 @@ db.init(() => {
     const searchParams = new URLSearchParams(req.url);
     const padId = searchParams.get('/socket.io/?padId');
     db.get(`padId:${padId}`, (e, r) => {
-      if (r) {
+      if (r && r.backend) {
         proxies[r.backend].web(req, res, (e) => {
           console.error(e);
         });
