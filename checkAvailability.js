@@ -14,6 +14,7 @@ exports.checkAvailability = async (backends, interval, maxPadsPerInstance) => {
     if (activePads <= maxPadsPerInstance) {
       return backendId;
     }
-    // TODO, handle if it hasn't had any available instances where to pass to?
+    // Return a backend if none of the others are totally free..
+    return backends[Math.floor(Math.random() * backends.length)];
   }
 };
