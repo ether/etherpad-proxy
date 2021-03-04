@@ -33,7 +33,7 @@ const backends = {
 const proxies = {};
 
 // Making availableBackend globally available.
-let availableBackend = null;
+let availableBackend = backends.backend1;
 setInterval(async () => {
   availableBackend = await checkAvailability(backends, checkInterval, maxPadsPerInstance);
 }, checkInterval);

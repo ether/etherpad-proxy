@@ -6,7 +6,7 @@ exports.checkAvailability = async (backends, interval, maxPadsPerInstance) => {
     const backend = backends[backendId];
     // query if it's free
     const stats = await superagent.get(`http://${backend.host}:${backend.port}/stats`);
-    const activePads = JSON.parse(stats.text).activePads || 0;
+    const activePads = JSON.parse(stats.text).activePads;
     console.log(`${backendId}: ${activePads}`);
     if (activePads === 0) {
       // console.log(`Free backend: ${backend} with ${activePads} active pads`);
@@ -18,11 +18,11 @@ exports.checkAvailability = async (backends, interval, maxPadsPerInstance) => {
       return backendId;
     } else {
       console.log(`delete backend: ${backendId}: ${activePads}`);
-      delete backends.backendId;
+      // TODO: Make it so it deletes a backend from random stuff
+      // delete backends.backendId;
     }
   }
+  const items = Object.keys(backends);
   // TODO handle no backends available gracefully.
-  if (backends.length === 0) throw new Error('Server full');
-  const randomBackend = Math.floor(Math.random() * Object.keys(backends.length));
-  return randomBackend;
+  return items[Math.floor(Math.random() * items.length)];
 };
