@@ -75,8 +75,18 @@ jobs:
     - name: Load test >> test1
       run: etherpad-loadtest http://localhost:9000/p/test1 -d 60 &
 
+    - name: Sleep for 5 seconds
+      uses: jakejarvis/wait-action@master
+      with:
+        time: '5s'
+
     - name: Load test >> test2
       run: etherpad-loadtest http://localhost:9000/p/test2 -d 60 &
+
+    - name: Sleep for 5 seconds
+      uses: jakejarvis/wait-action@master
+      with:
+        time: '5s'
 
     - name: Load test >> test3
       run: etherpad-loadtest http://localhost:9000/p/test3 -d 60 &
