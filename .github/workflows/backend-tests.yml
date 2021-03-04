@@ -104,6 +104,9 @@ jobs:
     - name: check test2 does not have test3
       run: test $( cat test2/var/dirty.db | grep test3 | wc -l ) -eq 0
 
+    - name: check test3s records
+      run: cat test3/var/dirty.db
+
     - name: check test3 has records
       run: test $( cat test3/var/dirty.db | grep test3 | wc -l ) -gt 10
 
