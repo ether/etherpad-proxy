@@ -77,7 +77,7 @@ jobs:
 
     - name: Load test >> test2
       run: etherpad-loadtest http://localhost:9000/p/test2 -d 60 &
-
+      
     - name: Load test >> test3
       run: etherpad-loadtest http://localhost:9000/p/test3 -d 60 &
 
