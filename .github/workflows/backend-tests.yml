@@ -81,17 +81,26 @@ jobs:
     - name: Load test >> test3
       run: etherpad-loadtest http://localhost:9000/p/test3 -d 60 &
 
+    - name: check test1 has records
+      run: test $( cat test1/var/dirty.db | grep test1 | wc -l ) -gt 10
+
     - name: check test1 does not have test2
       run: test $( cat test1/var/dirty.db | grep test2 | wc -l ) -eq 0
 
     - name: check test1 does not have test3
       run: test $( cat test1/var/dirty.db | grep test3 | wc -l ) -eq 0
 
+    - name: check test2 has records
+      run: test $( cat test2/var/dirty.db | grep test2 | wc -l ) -gt 10
+
     - name: check test2 does not have test1
       run: test $( cat test2/var/dirty.db | grep test1 | wc -l ) -eq 0
 
     - name: check test2 does not have test3
       run: test $( cat test2/var/dirty.db | grep test3 | wc -l ) -eq 0
+
+    - name: check test3 has records
+      run: test $( cat test3/var/dirty.db | grep test3 | wc -l ) -gt 10
 
     - name: check test3 does not have test1
       run: test $( cat test3/var/dirty.db | grep test1 | wc -l ) -eq 0
