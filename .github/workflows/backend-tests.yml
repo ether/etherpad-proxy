@@ -81,10 +81,10 @@ jobs:
     - name: Load test >> test3
       run: etherpad-loadtest http://localhost:9000/p/test3 -d 60 &
 
-    - name: Sleep for 10 seconds
+    - name: Sleep for 30 seconds
       uses: jakejarvis/wait-action@master
       with:
-        time: '10s'
+        time: '30s'
 
     - name: check test1 has records
       run: test $( cat test1/var/dirty.db | grep test1 | wc -l ) -gt 10
