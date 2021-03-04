@@ -5,7 +5,7 @@ const http = require('http');
 const ueberdb = require('ueberdb2');
 const checkAvailability = require('./checkAvailability').checkAvailability;
 
-const checkInterval = 1000;
+const checkInterval = 10;
 const maxPadsPerInstance = 1;
 const backends = {
   backend1: {
