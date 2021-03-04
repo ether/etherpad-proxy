@@ -61,6 +61,7 @@ const initiateRoute = (backend, req, res, socket, head) => {
 const createRoute = (padId, req, res, socket, head) => {
   // If the route isn't for a specific padID IE it's for a static file
   // we can use any of the backends but now let's use the first :)
+  // TODO: Use round robin or so.
   if (!padId) {
     return initiateRoute('backend1', req, res, socket, head);
   }
@@ -76,7 +77,8 @@ const createRoute = (padId, req, res, socket, head) => {
         backend: availableBackend,
       });
       console.log(`database miss: ${padId} <> ${availableBackend}`);
-      initiateRoute(availableBackend, req, res, socket, head);
+      // TODO: Don't use hard coded backend 1 here.
+      initiateRoute(availableBackend || 'backend1', req, res, socket, head);
     }
   });
 };
