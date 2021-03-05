@@ -19,6 +19,7 @@ node app.js
 - [ ] Abstract http-proxy out / introduce support for other proxy software/services.
 - [ ] Test in production
 - [ ] API to create/destroy backends - REF: https://github.com/colyseus/proxy/blob/master/proxy.ts
+- [ ] If no backends are available, send a message explaining "we're full up"
 
 ## V2
 - [ ] Consider if multiple backends should serve static files or fall back to 9001 (as per current)
