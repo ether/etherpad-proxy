@@ -1,4 +1,4 @@
-name: "Proxy Test"
+name: "Proxy Test: 3 Pads <> 3 Unique Backends"
 
 # any branch is useful for testing before a PR is submitted
 on: [push, pull_request]
