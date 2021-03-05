@@ -1,0 +1,22 @@
+{
+  "backends" : {
+    "backend1": {
+      "host": "localhost",
+      "port": 9001
+    },
+    "backend2": {
+      "host": "localhost",
+      "port": 9002
+    },
+    "backend3": {
+      "host": "localhost",
+      "port": 9003
+    }
+  },
+  "maxPadsPerInstance": 5,
+  "checkInterval": 1000,
+  "dbType": "dirty",
+  "dbSettings": {
+    "filename": "var/dirty.db"
+  }
+}

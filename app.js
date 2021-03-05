@@ -4,31 +4,24 @@ const httpProxy = require('http-proxy');
 const http = require('http');
 const ueberdb = require('ueberdb2');
 const checkAvailability = require('./checkAvailability').checkAvailability;
-
-// the interval we check each Etherpad instance for it's availability.
-const checkInterval = 1000;
-
-// The maximum number of pads editable per Etherpad instance.  You will want to modify
-// this to a nicer value that suits your environment.  In the future it would be wise to
-// TODO: include test coverage for more than one maxPadsPerInstance
-const maxPadsPerInstance = 1;
-
-// hard coded backends - temporary herp derp
-const backends = {
-  backend1: {
-    host: 'localhost',
-    port: 9001,
-  },
-  backend2: {
-    host: 'localhost',
-    port: 9002,
-  },
-  backend3: {
-    host: 'localhost',
-    port: 9003,
-  },
+// load the settings
+const loadSettings = () => {
+  const fs = require('fs');
+  let settings;
+  try {
+    fs.readFileSync('settings.json', 'utf8');
+    return JSON.parse(settings);
+  } catch (e) {
+    console.error('Please create your own settings.json file');
+    const settings = fs.readFileSync('settings.json.template', 'utf8');
+    return JSON.parse(settings);
+  }
 };
-const backendIds = Object.keys(backends);
+
+const settings = loadSettings();
+if (settings.dbType === 'dirty') console.error('DirtyDB is not recommend for production');
+
+const backendIds = Object.keys(settings.backends);
 
 // An object of our proxy instances
 const proxies = {};
@@ -36,12 +29,14 @@ const proxies = {};
 // Making availableBackend globally available.
 let availableBackend = backendIds[Math.floor(Math.random() * backendIds.length)];
 setInterval(async () => {
-  availableBackend = await checkAvailability(backends, checkInterval, maxPadsPerInstance);
-}, checkInterval);
+  availableBackend = await checkAvailability(
+      settings.backends,
+      settings.checkInterval,
+      settings.maxPadsPerInstance);
+}, settings.checkInterval);
 
 // Creating our database connection
-// TODO: allow settings to set the database type.
-const db = new ueberdb.Database('dirty', {filename: './dirty.db'});
+const db = new ueberdb.Database(settings.dbType, settings.dbSettings);
 
 // Initiate the proxy routes to the backends
 const initiateRoute = (backend, req, res, socket, head) => {
@@ -95,8 +90,8 @@ db.init(() => {
     /* eslint-disable-next-line new-cap */
     proxies[backendId] = new httpProxy.createProxyServer({
       target: {
-        host: backends[backendId].host,
-        port: backends[backendId].port,
+        host: settings.backends[backendId].host,
+        port: settings.backends[backendId].port,
       },
     });
   }
