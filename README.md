@@ -13,7 +13,8 @@ node app.js
 ```
 
 ## V1
-- [ ] Resolve all TODOs left in code or push to V1
+- [ ] More CI / test coverage, more than one pad allowed per instance
+- [ ] Move Settings into a file
 
 ## V1
 - [ ] Abstract http-proxy out / introduce support for other proxy software/services.

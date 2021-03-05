@@ -39,7 +39,7 @@ setInterval(async () => {
   availableBackend = await checkAvailability(backends, checkInterval, maxPadsPerInstance);
 }, checkInterval);
 
-// Creating our databsae connection
+// Creating our database connection
 // TODO: allow settings to set the database type.
 const db = new ueberdb.Database('dirty', {filename: './dirty.db'});
 
