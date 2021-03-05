@@ -96,6 +96,9 @@ jobs:
       with:
         time: '30s'
 
+    - name: See test1db
+      run: cat test1/var/dirty.db
+
     - name: check test1 has just one pad.
       run: test $(grep -oE '(test1|test2|test3)' test1/var/dirty.db | sort -u | wc -l) -gt 1
 
