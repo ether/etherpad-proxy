@@ -11,6 +11,7 @@ const checkInterval = 1000;
 // The maximum number of pads editable per Etherpad instance.  You will want to modify
 // this to a nicer value that suits your environment.  In the future it would be wise to
 // TODO: use a round robin approach
+// TODO: include test coverage for more than one maxPadsPerInstance
 const maxPadsPerInstance = 1;
 
 // hard coded backends - temporary herp derp
