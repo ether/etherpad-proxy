@@ -64,7 +64,7 @@ jobs:
       run: cd test3 && node src/node/server.js &
 
     - name: support 3 pads per instances
-      run: sed 's/5/3/g' settings.json.template > settings.json
+      run: sed 's/5/1/g' settings.json.template > settings.json
 
     - name: Start proxy
       run: node app.js &

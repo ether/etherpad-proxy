@@ -10,7 +10,7 @@ jobs:
     if: |
          (github.event_name != 'pull_request')
          || (github.event.pull_request.head.repo.id != github.event.pull_request.base.repo.id)
-    name: 9 Connections are proxied to 3 backends depending on which one reports availability first
+    name: 9 Pads <> 3 Backends
     runs-on: ubuntu-latest
 
     steps:
