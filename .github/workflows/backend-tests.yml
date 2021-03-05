@@ -96,10 +96,9 @@ jobs:
       with:
         time: '30s'
 
-
     - name: see test1 has records
       run: cat test1/var/dirty.db
-      
+
     - name: check test1 has records
       run: test $( cat test1/var/dirty.db | grep test1 | wc -l ) -gt 10
 
@@ -108,6 +107,9 @@ jobs:
 
     - name: check test1 does not have test3
       run: test $( cat test1/var/dirty.db | grep test3 | wc -l ) -eq 0
+
+    - name: see test2 has records
+      run: cat test2/var/dirty.db
 
     - name: check test2 has records
       run: test $( cat test2/var/dirty.db | grep test2 | wc -l ) -gt 10
