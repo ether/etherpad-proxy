@@ -19,6 +19,7 @@ const loadSettings = () => {
 };
 
 const settings = loadSettings();
+console.log(settings);
 if (settings.dbType === 'dirty') console.error('DirtyDB is not recommend for production');
 
 const backendIds = Object.keys(settings.backends);

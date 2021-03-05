@@ -63,8 +63,11 @@ jobs:
     - name: start etherpad >> test3
       run: cd test3 && node src/node/server.js &
 
-    - name: support 3 pads per instances
+    - name: support 1 pad per instances
       run: sed 's/5/1/g' settings.json.template > settings.json
+
+    - name: check settings
+      run: cat settings.json
 
     - name: Start proxy
       run: node app.js &
