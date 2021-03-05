@@ -63,6 +63,9 @@ jobs:
     - name: start etherpad >> test3
       run: cd test3 && node src/node/server.js &
 
+    - name: support 3 pads per instances
+      run: sed 's/5/3/g' settings.json.template > settings.json
+
     - name: Start proxy
       run: node app.js &
 
@@ -75,41 +78,43 @@ jobs:
     - name: Load test >> test1
       run: etherpad-loadtest http://localhost:9000/p/test1 -d 60 &
 
-    - name: Sleep for 5 seconds
-      uses: jakejarvis/wait-action@master
-      with:
-        time: '5s'
-
     - name: Load test >> test2
       run: etherpad-loadtest http://localhost:9000/p/test2 -d 60 &
 
+    - name: Load test >> test3
+      run: etherpad-loadtest http://localhost:9000/p/test3 -d 60 &
+
     - name: Sleep for 5 seconds
       uses: jakejarvis/wait-action@master
       with:
         time: '5s'
 
-    - name: Load test >> test3
-      run: etherpad-loadtest http://localhost:9000/p/test3 -d 60 &
+    - name: Load test >> test4
+      run: etherpad-loadtest http://localhost:9000/p/test4 -d 60 &
+
+    - name: Load test >> test5
+      run: etherpad-loadtest http://localhost:9000/p/test5 -d 60 &
+
+    - name: Load test >> test6
+      run: etherpad-loadtest http://localhost:9000/p/test6 -d 60 &
+
+    - name: Sleep for 5 seconds
+      uses: jakejarvis/wait-action@master
+      with:
+        time: '5s'
+
+    - name: Load test >> test7
+      run: etherpad-loadtest http://localhost:9000/p/test7 -d 60 &
+
+    - name: Load test >> test8
+      run: etherpad-loadtest http://localhost:9000/p/test8 -d 60 &
+
+    - name: Load test >> test9
+      run: etherpad-loadtest http://localhost:9000/p/test9 -d 60 &
 
     - name: Sleep for 30 seconds
       uses: jakejarvis/wait-action@master
       with:
         time: '30s'
 
-    - name: See test1db
-      run: cat test1/var/dirty.db
-
-    - name: check sometimes
-      run: if [[ $(grep -oE '(test1|test2|test3)' test1/var/dirty.db | sort -u | wc -l) -gt 1 ]]; then echo bad; else echo good; fi
-
-    - name: check test1 has just one pad.
-      run: grep -oE '(test1|test2|test3)' test1/var/dirty.db | sort -u | wc -l
-
-    - name: check test1 has just one pad.
-      run: test $(grep -oE '(test1|test2|test3)' test1/var/dirty.db | sort -u | wc -l) -eq 1
-
-    - name: check test2 has just one pad.
-      run: test $(grep -oE '(test1|test2|test3)' test2/var/dirty.db | sort -u | wc -l) -eq 1
-
-    - name: check test3 has just one pad.
-      run: test $(grep -oE '(test1|test2|test3)' test3/var/dirty.db | sort -u | wc -l) -eq 1
+## TODO: Tests for this..
