@@ -10,7 +10,7 @@ jobs:
     if: |
          (github.event_name != 'pull_request')
          || (github.event.pull_request.head.repo.id != github.event.pull_request.base.repo.id)
-    name: Connections are proxied to different backends
+    name: 3 Pads <> 3 Unique Backends
     runs-on: ubuntu-latest
 
     steps:
