@@ -12,7 +12,6 @@ const checkInterval = 1000;
 // this to a nicer value that suits your environment.  In the future it would be wise to
 // TODO: include test coverage for more than one maxPadsPerInstance
 const maxPadsPerInstance = 1;
-// TODO: use a round robin approach
 
 // hard coded backends - temporary herp derp
 const backends = {
@@ -29,12 +28,13 @@ const backends = {
     port: 9003,
   },
 };
+const backendIds = Object.keys(backends);
 
 // An object of our proxy instances
 const proxies = {};
 
 // Making availableBackend globally available.
-let availableBackend = Object.keys(backends)[0];
+let availableBackend = backendIds[Math.floor(Math.random() * backendIds.length)];
 setInterval(async () => {
   availableBackend = await checkAvailability(backends, checkInterval, maxPadsPerInstance);
 }, checkInterval);
@@ -63,7 +63,6 @@ const initiateRoute = (backend, req, res, socket, head) => {
 const createRoute = (padId, req, res, socket, head) => {
   // If the route isn't for a specific padID IE it's for a static file
   // we can use any of the backends but now let's use the first :)
-  // TODO: Use round robin or so.
   if (!padId) {
     return initiateRoute(availableBackend, req, res, socket, head);
   }
@@ -74,22 +73,25 @@ const createRoute = (padId, req, res, socket, head) => {
       console.log(`database hit: ${padId} <> ${r.backend}`);
       initiateRoute(r.backend, req, res, socket, head);
     } else {
-      // TODO remove this hard coding;
-      if (!availableBackend) availableBackend = Object.keys(backends)[0];
+      if (!availableBackend) {
+        availableBackend =
+            backendIds[Math.floor(Math.random() * backendIds.length)];
+      }
       // if no backend is stored for this pad, create a new connection
       db.set(`padId:${padId}`, {
         backend: availableBackend,
       });
       console.log(`database miss: ${padId} <> ${availableBackend}`);
-      // TODO: Don't use hard coded backend 1 here.
-      initiateRoute(availableBackend || Object.keys(backends)[0], req, res, socket, head);
+      initiateRoute(availableBackend ||
+        backendIds[Math.floor(Math.random() * backendIds)]
+      , req, res, socket, head);
     }
   });
 };
 
 db.init(() => {
   // Create the backends.
-  for (const backendId of Object.keys(backends)) {
+  for (const backendId of backendIds) {
     /* eslint-disable-next-line new-cap */
     proxies[backendId] = new httpProxy.createProxyServer({
       target: {
