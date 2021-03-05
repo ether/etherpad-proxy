@@ -6,7 +6,7 @@ const ueberdb = require('ueberdb2');
 const checkAvailability = require('./checkAvailability').checkAvailability;
 
 // the interval we check each Etherpad instance for it's availability.
-const checkInterval = 100;
+const checkInterval = 1000;
 
 // The maximum number of pads editable per Etherpad instance.  You will want to modify
 // this to a nicer value that suits your environment.  In the future it would be wise to
