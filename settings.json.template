@@ -17,6 +17,6 @@
   "checkInterval": 1000,
   "dbType": "dirty",
   "dbSettings": {
-    "filename": "var/dirty.db"
+    "filename": "dirty.db"
   }
 }
