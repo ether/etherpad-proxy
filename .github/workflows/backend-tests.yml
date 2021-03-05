@@ -99,8 +99,8 @@ jobs:
     - name: check test1 has just one pad.
       run: test $(grep -oE '(test1|test2|test3)' test1/var/dirty.db | sort -u | wc -l) -gt 1
 
-    - name: check test3 has just one pad.
-      run: test $(grep -oE '(test1|test2|test3)' test1/var/dirty.db | sort -u | wc -l) -gt 1
+    - name: check test2 has just one pad.
+      run: test $(grep -oE '(test1|test2|test3)' test2/var/dirty.db | sort -u | wc -l) -gt 1
 
     - name: check test3 has just one pad.
-      run: test $(grep -oE '(test1|test2|test3)' test1/var/dirty.db | sort -u | wc -l) -gt 1
+      run: test $(grep -oE '(test1|test2|test3)' test3/var/dirty.db | sort -u | wc -l) -gt 1
