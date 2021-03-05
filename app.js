@@ -10,9 +10,9 @@ const checkInterval = 1000;
 
 // The maximum number of pads editable per Etherpad instance.  You will want to modify
 // this to a nicer value that suits your environment.  In the future it would be wise to
-// TODO: use a round robin approach
 // TODO: include test coverage for more than one maxPadsPerInstance
 const maxPadsPerInstance = 1;
+// TODO: use a round robin approach
 
 // hard coded backends - temporary herp derp
 const backends = {
@@ -65,7 +65,7 @@ const createRoute = (padId, req, res, socket, head) => {
   // we can use any of the backends but now let's use the first :)
   // TODO: Use round robin or so.
   if (!padId) {
-    return initiateRoute(Object.keys(backends)[0], req, res, socket, head);
+    return initiateRoute(availableBackend, req, res, socket, head);
   }
 
   // pad specific backend required, do we have a backend already?
