@@ -81,13 +81,17 @@ const createRoute = (padId, req, res, socket, head) => {
       if (!availableBackends) {
         return console.log('Request made during startup.');
       }
-      if (availableBackends.indexOf(r.backend) === -1) {
+      if (availableBackends.indexOf(r.backend) !== -1) {
+        initiateRoute(r.backend, req, res, socket, head);
+      } else {
         // not available..
         // console.log(`hit backend not available: ${padId} <> ${r.backend}`);
-        initiateRoute(availableBackends[Math.floor(Math.random() * availableBackends.length)]
-            , req, res, socket, head);
-      } else {
-        initiateRoute(r.backend, req, res, socket, head);
+        const newBackend = availableBackends[Math.floor(Math.random() * availableBackends.length)];
+        // set and store a new backend
+        db.set(`padId:${padId}`, {
+          backend: newBackend,
+        });
+        initiateRoute(newBackend, req, res, socket, head);
       }
     } else {
       // if no backend is stored for this pad, create a new connection

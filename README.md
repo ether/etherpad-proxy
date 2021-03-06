@@ -28,15 +28,10 @@ For database settings/options please see UeberDB https://github.com/ether/ueberd
 
 ## V1
 - [ ] Test in production.
-  - [ ] Export endpoints <-- pretty sure this is currently broken (as padid might not be right - I think it just needs a split)
-  - [ ] Comments Plugin
-- [ ] Remove backend if it's not available.
 - [ ] Figure out why changing ``1000`` to ``200`` for ``checkInterval`` makes tests fail.
 - [ ] Abstract http-proxy out / introduce support for other proxy software/services.
 - [ ] API to create/destroy backends - REF: https://github.com/colyseus/proxy/blob/master/proxy.ts
 - [ ] If no backends are available, send a message explaining "we're full up"
-- [ ] Currently pads are stuck to backends permanently, this is bad if they are revisited,
- ergo pads should only have a certain staleness allowed at which point they should be nuked from the proxy database.
 
 # License
 Apache 2
