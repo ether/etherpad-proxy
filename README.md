@@ -26,9 +26,6 @@ Settings come from ``settings.json``, see ``settings.json.template`` for an exam
 
 For database settings/options please see UeberDB https://github.com/ether/ueberdb
 
-## V0
-- [ ] Don't try to route anything to any backends that aren't responding
-
 ## V1
 - [ ] Test in production.
   - [ ] Export endpoints <-- pretty sure this is currently broken (as padid might not be right - I think it just needs a split)

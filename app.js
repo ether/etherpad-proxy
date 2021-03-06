@@ -28,9 +28,16 @@ const backendIds = Object.keys(settings.backends);
 const proxies = {};
 
 // Making availableBackend globally available.
-let availableBackend = backendIds[Math.floor(Math.random() * backendIds.length)];
+let availableBackends;
+(async () => {
+  checkAvailability(
+      settings.backends,
+      settings.checkInterval,
+      settings.maxPadsPerInstance);
+});
+// And now grab them every X duration
 setInterval(async () => {
-  availableBackend = await checkAvailability(
+  availableBackends = await checkAvailability(
       settings.backends,
       settings.checkInterval,
       settings.maxPadsPerInstance);
@@ -43,14 +50,18 @@ const db = new ueberdb.Database(settings.dbType, settings.dbSettings);
 const initiateRoute = (backend, req, res, socket, head) => {
   if (res) {
     // console.log('backend: ', backend);
-    proxies[backend].web(req, res, (e) => {
-      console.error(e);
-    });
+    if (proxies[backend]) {
+      proxies[backend].web(req, res, (e) => {
+        console.error(e);
+      });
+    }
   }
   if (socket && head) {
-    proxies[backend].ws(req, socket, head, (e) => {
-      console.error(e);
-    });
+    if (proxies[backend]) {
+      proxies[backend].ws(req, socket, head, (e) => {
+        console.error(e);
+      });
+    }
   }
 };
 
@@ -60,27 +71,32 @@ const createRoute = (padId, req, res, socket, head) => {
   // If the route isn't for a specific padID IE it's for a static file
   // we can use any of the backends but now let's use the first :)
   if (!padId) {
-    return initiateRoute(availableBackend, req, res, socket, head);
+    return initiateRoute(availableBackends[0], req, res, socket, head);
   }
 
   // pad specific backend required, do we have a backend already?
   db.get(`padId:${padId}`, (e, r) => {
     if (r && r.backend) {
       // console.log(`database hit: ${padId} <> ${r.backend}`);
-      initiateRoute(r.backend, req, res, socket, head);
-    } else {
-      if (!availableBackend) {
-        availableBackend =
-            backendIds[Math.floor(Math.random() * backendIds.length)];
+      if (!availableBackends) {
+        return console.log('Request made during startup.');
       }
+      if (availableBackends.indexOf(r.backend) === -1) {
+        // not available..
+        // console.log(`hit backend not available: ${padId} <> ${r.backend}`);
+        initiateRoute(availableBackends[Math.floor(Math.random() * availableBackends.length)]
+            , req, res, socket, head);
+      } else {
+        initiateRoute(r.backend, req, res, socket, head);
+      }
+    } else {
       // if no backend is stored for this pad, create a new connection
       db.set(`padId:${padId}`, {
-        backend: availableBackend,
+        backend: availableBackends[0],
       });
-      console.log(`database miss: ${padId} <> ${availableBackend}`);
-      initiateRoute(availableBackend ||
-        backendIds[Math.floor(Math.random() * backendIds)]
-      , req, res, socket, head);
+      console.log(`database miss: ${padId} <> ${availableBackends[0]}`);
+      initiateRoute(availableBackends[Math.floor(Math.random() * availableBackends.length)]
+          , req, res, socket, head);
     }
   });
 };
