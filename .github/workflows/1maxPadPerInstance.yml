@@ -70,7 +70,7 @@ jobs:
       run: cat settings.json
 
     - name: Start proxy
-      run: node app.js & > proxyLog.txt
+      run: node app.js > proxyLog.txt &
 
     - name: Install etherpad-load-test
       run: npm install etherpad-load-test -g
