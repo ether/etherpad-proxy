@@ -1,7 +1,7 @@
 ![Proxy Test](https://github.com/ether/etherpad-proxy/actions/workflows/backend-tests.yml/badge.svg)](https://github.com/ether/etherpad-proxy/actions/workflows/backend-tests.yml)
 
 # Experimental Reverse Proxy for Etherpad
-This is a reverse proxy that runs on port 9000 which will route(shard) pads based on padId(within query[currently a branch of Etherpad core]) to a pool(currently hardcoded[in app.js]) of backends.
+This is a reverse proxy that runs on port 9000 which will route(shard) pads based on padId(within query[currently in socket-namespace branch of Etherpad core]) to a pool of backends.
 
 It's likely that this project will only get to proof of concept stage(see V0) and then something that integrates with HAProxy/Varnish et al will replace it as NodeJS is probably not the right tool for the job but having the high level management system written in NodeJS makes sense.
 
