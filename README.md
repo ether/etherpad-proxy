@@ -3,16 +3,17 @@
 # Experimental Reverse Proxy for Etherpad
 This is a reverse proxy that runs on port 9000 which will route(shard) pads based on padId(within query[currently a branch of Etherpad core]) to a pool(currently hardcoded[in app.js]) of backends.
 
-To add or remove backends, modify app.js - In the future this will be API driven.
+It's likely that this project will only get to proof of concept stage(see V0) and then something that integrates with HAProxy/Varnish et al will replace it as NodeJS is probably not the right tool for the job but having the high level management system written in NodeJS makes sense.
 
-It's likely that this project will only get to proof of concept stage and then something that integrates with HAProxy/Varnish et al will replace it as NodeJS is probably not the right tool for the job but having the high level management system written in NodeJS makes sense.
+## Getting started
+Copy ``settings.json.template`` to ``settings.json`` and modify the values.
 
 ## Usage
 ```
 node app.js
 ```
 
-## settings
+## Settings
 Settings come from settings.json, see settings.json.template for an example to modify for your environment.
 
 ``backends`` is your Backend Etherpad instances.
@@ -43,3 +44,6 @@ For database settings/options please see UeberDB https://github.com/etherpad-lit
     - Advantage of single point = Only have to update plugin files there.
     - Disadvantage - single point of failure, plugins might be out of sync, plugin backend/frontend might bt out of sync.
     - Conclusion: I think a pads static content should come from where it gets it's content from, but then there are more complications especially surrounding export URIs..  
+
+# License
+Apache 2
