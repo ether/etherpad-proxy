@@ -14,7 +14,7 @@
     }
   },
   "maxPadsPerInstance": 5,
-  "checkInterval": 1000,
+  "checkInterval": 100,
   "dbType": "dirty",
   "dbSettings": {
     "filename": "dirty.db"
