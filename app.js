@@ -95,12 +95,12 @@ const createRoute = (padId, req, res, socket, head) => {
       }
     } else {
       // if no backend is stored for this pad, create a new connection
+      const newBackend = availableBackends[Math.floor(Math.random() * availableBackends.length)];
       db.set(`padId:${padId}`, {
-        backend: availableBackends[0],
+        backend: newBackend,
       });
-      console.log(`database miss: ${padId} <> ${availableBackends[0]}`);
-      initiateRoute(availableBackends[Math.floor(Math.random() * availableBackends.length)]
-          , req, res, socket, head);
+      console.log(`database miss: ${padId} <> ${newBackend}`);
+      initiateRoute(newBackend, req, res, socket, head);
     }
   });
 };
