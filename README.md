@@ -1,4 +1,4 @@
-[![Proxy Test](https://github.com/ether/etherpad-proxy/actions/workflows/backend-tests.yml/badge.svg)](https://github.com/ether/etherpad-proxy/actions/workflows/backend-tests.yml)]
+![Proxy Test](https://github.com/ether/etherpad-proxy/actions/workflows/backend-tests.yml/badge.svg)](https://github.com/ether/etherpad-proxy/actions/workflows/backend-tests.yml)
 
 # Experimental Reverse Proxy for Etherpad
 This is a reverse proxy that runs on port 9000 which will route(shard) pads based on padId(within query[currently a branch of Etherpad core]) to a pool(currently hardcoded[in app.js]) of backends.
