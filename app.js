@@ -71,7 +71,9 @@ const createRoute = (padId, req, res, socket, head) => {
   // If the route isn't for a specific padID IE it's for a static file
   // we can use any of the backends but now let's use the first :)
   if (!padId) {
-    return initiateRoute(availableBackends[0], req, res, socket, head);
+    const newBackend = availableBackends.available[
+        Math.floor(Math.random() * availableBackends.available.length)];
+    return initiateRoute(newBackend, req, res, socket, head);
   }
 
   // pad specific backend required, do we have a backend already?
@@ -81,12 +83,13 @@ const createRoute = (padId, req, res, socket, head) => {
       if (!availableBackends) {
         return console.log('Request made during startup.');
       }
-      if (availableBackends.indexOf(r.backend) !== -1) {
+      if (availableBackends.up.indexOf(r.backend) !== -1) {
         initiateRoute(r.backend, req, res, socket, head);
       } else {
-        // not available..
+        // not available..  actually it might be up but not available..
         console.log(`hit backend not available: ${padId} <> ${r.backend}`);
-        const newBackend = availableBackends[Math.floor(Math.random() * availableBackends.length)];
+        const newBackend = availableBackends.up[
+            Math.floor(Math.random() * availableBackends.up.length)];
         // set and store a new backend
         db.set(`padId:${padId}`, {
           backend: newBackend,
@@ -97,11 +100,12 @@ const createRoute = (padId, req, res, socket, head) => {
     } else {
       // if no backend is stored for this pad, create a new connection
       console.log(availableBackends);
-      const newBackend = availableBackends[Math.floor(Math.random() * availableBackends.length)];
+      const newBackend = availableBackends.available[
+          Math.floor(Math.random() * availableBackends.available.length)];
       db.set(`padId:${padId}`, {
         backend: newBackend,
       });
-      if (!availableBackends) console.log('no available backends!');
+      if (!availableBackends.available) console.log('no available backends!');
       console.log(`database miss, initiating new association: ${padId} <> ${newBackend}`);
       initiateRoute(newBackend, req, res, socket, head);
     }
