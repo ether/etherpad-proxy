@@ -33,7 +33,7 @@ jobs:
       ## TODO REMOVE socket-namespace once merged!
 
     - name: start etherpad >> test1
-      run: cd test1 && node src/node/server.js > test1/test1log.txt &
+      run: cd test1 && node src/node/server.js > test1log.txt &
 
     - name: Git clone etherpad to test2
       run: git clone https://github.com/ether/etherpad-lite.git test2
@@ -47,7 +47,7 @@ jobs:
       ## TODO REMOVE socket-namespace once merged!
 
     - name: start etherpad >> test2
-      run: cd test2 && node src/node/server.js > test2/test2log.txt &
+      run: cd test2 && node src/node/server.js > test2log.txt &
 
     - name: Git clone etherpad to test3
       run: git clone https://github.com/ether/etherpad-lite.git test3
@@ -61,7 +61,7 @@ jobs:
       ## TODO REMOVE socket-namespace once merged!
 
     - name: start etherpad >> test3
-      run: cd test3 && node src/node/server.js > test3/test3log.txt &
+      run: cd test3 && node src/node/server.js > test3log.txt &
 
     - name: support 1 pad per instances
       run: sed 's/5/1/g' settings.json.template > settings.json
