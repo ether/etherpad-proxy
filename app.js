@@ -103,8 +103,10 @@ db.init(() => {
       padId = req.url.split('/p/')[1].split('?')[0].split('/')[0];
       console.log(`initial request to /p/${padId}`);
     }
-    const searchParams = new URLSearchParams(req.url);
-    padId = searchParams.get('/socket.io/?padId');
+    if (!padId) {
+      const searchParams = new URLSearchParams(req.url);
+      padId = searchParams.get('/socket.io/?padId');
+    }
     createRoute(padId, req, res, null, null);
   });
 
