@@ -1,4 +1,4 @@
-[![Proxy Test](https://github.com/ether/etherpad-proxy/actions/workflows/backend-tests.yml/badge.svg)](https://github.com/ether/etherpad-proxy/actions/workflows/backend-tests.yml)
+[![Proxy Test](https://github.com/ether/etherpad-proxy/actions/workflows/backend-tests.yml/badge.svg)](https://github.com/ether/etherpad-proxy/actions/workflows/backend-tests.yml)]
 
 # Experimental Reverse Proxy for Etherpad
 This is a reverse proxy that runs on port 9000 which will route(shard) pads based on padId(within query[currently a branch of Etherpad core]) to a pool(currently hardcoded[in app.js]) of backends.
@@ -23,8 +23,13 @@ Settings come from settings.json, see settings.json.template for an example to m
 
 For database settings/options please see UeberDB https://github.com/etherpad-lite
 
+## V0
+- [ ] Don't try to route anything to any backends that aren't responding
+
 ## V1
 - [ ] Test in production.
+  - [ ] Export endpoints
+  - [ ] Comments Plugin
 - [ ] Remove backend if it's not available.
 - [ ] Figure out why changing ``1000`` to ``200`` for ``checkInterval`` makes tests fail.
 - [ ] Abstract http-proxy out / introduce support for other proxy software/services.
