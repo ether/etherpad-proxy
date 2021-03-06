@@ -1,4 +1,4 @@
-name: "Rapido assignment Proxy Test: 3 Pads <> 3 Unique Backends"
+name: "Somewhat faster assignment Proxy Test: 3 Pads <> 3 Unique Backends"
 
 # any branch is useful for testing before a PR is submitted
 on: [push, pull_request]
@@ -81,8 +81,19 @@ jobs:
     - name: Load test >> test1
       run: etherpad-loadtest http://localhost:9000/p/test1 -d 20 &
 
+    - name: Sleep for 1 seconds
+      uses: jakejarvis/wait-action@master
+      with:
+        time: '1s'
+
     - name: Load test >> test2
       run: etherpad-loadtest http://localhost:9000/p/test2 -d 20 &
+
+
+    - name: Sleep for 1 seconds
+      uses: jakejarvis/wait-action@master
+      with:
+        time: '1s'
 
     - name: Load test >> test3
       run: etherpad-loadtest http://localhost:9000/p/test3 -d 20 &

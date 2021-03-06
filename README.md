@@ -23,16 +23,15 @@ Settings come from settings.json, see settings.json.template for an example to m
 
 For database settings/options please see UeberDB https://github.com/etherpad-lite
 
-## V0
-- [ ] More CI / test coverage, more than one pad allowed per instance
-
 ## V1
-- [ ] Abstract http-proxy out / introduce support for other proxy software/services.
 - [ ] Test in production
+- [ ] Figure out why changing ``1000`` to ``200`` for ``checkInterval`` makes tests fail.
+- [ ] Abstract http-proxy out / introduce support for other proxy software/services.
 - [ ] API to create/destroy backends - REF: https://github.com/colyseus/proxy/blob/master/proxy.ts
 - [ ] If no backends are available, send a message explaining "we're full up"
 - [ ] Currently pads are stuck to backends permanently, this is bad if they are revisited,
  ergo pads should only have a certain staleness allowed at which point they should be nuked from the proxy database.
+
 ## V2
 - [ ] Consider if multiple backends should serve static files or fall back to 9001 (as per current)
     - Advantage of single point = Only have to update plugin files there.
