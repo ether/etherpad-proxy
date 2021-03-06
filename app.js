@@ -148,6 +148,5 @@ db.init(() => {
     createRoute(padId, req, null, socket, head);
   });
 
-  // Finally listen on port 9000 :)
-  proxyServer.listen(9000);
+  proxyServer.listen(settings.port);
 });

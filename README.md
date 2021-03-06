@@ -24,6 +24,8 @@ Settings come from ``settings.json``, see ``settings.json.template`` for an exam
 
 ``checkInterval`` is how often to check every backend for availability.  You should set this to a low number if you have lower number of very active instances with short pad life.  You should set this to a high number if you have lost of instances with relatively long pad life expectancy.
 
+``port`` is the port this service listens on.
+
 For database settings/options please see UeberDB https://github.com/ether/ueberdb
 
 ## V1

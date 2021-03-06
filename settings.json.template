@@ -1,4 +1,5 @@
 {
+  "port": 9000,
   "backends" : {
     "backend1": {
       "host": "localhost",
