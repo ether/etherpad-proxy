@@ -19,12 +19,13 @@ Settings come from settings.json, see settings.json.template for an example to m
 
 ``maxPadsPerInstance`` is how many active pads you want to allow per instance.  This value should be between 1 and 20000 depending on the number of authors and words per minute that you limit or you wish to allow.  Once this limit is met then random instances will be used.
 
-``checkInterval`` is how often to check every backend for availibility.  You should set this to a low number if you have lower number of very active instances with short pad life.  You should set this to a high number if you have lost of instances with relatively long pad life expectancy.
+``checkInterval`` is how often to check every backend for availability.  You should set this to a low number if you have lower number of very active instances with short pad life.  You should set this to a high number if you have lost of instances with relatively long pad life expectancy.
 
 For database settings/options please see UeberDB https://github.com/etherpad-lite
 
 ## V1
-- [ ] Test in production
+- [ ] Test in production.
+- [ ] Remove backend if it's not available.
 - [ ] Figure out why changing ``1000`` to ``200`` for ``checkInterval`` makes tests fail.
 - [ ] Abstract http-proxy out / introduce support for other proxy software/services.
 - [ ] API to create/destroy backends - REF: https://github.com/colyseus/proxy/blob/master/proxy.ts
