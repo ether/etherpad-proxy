@@ -33,7 +33,7 @@ jobs:
       ## TODO REMOVE socket-namespace once merged!
 
     - name: start etherpad >> test1
-      run: cd test1 && node src/node/server.js &
+      run: cd test1 && node src/node/server.js > test1/test1log.txt &
 
     - name: Git clone etherpad to test2
       run: git clone https://github.com/ether/etherpad-lite.git test2
@@ -47,7 +47,7 @@ jobs:
       ## TODO REMOVE socket-namespace once merged!
 
     - name: start etherpad >> test2
-      run: cd test2 && node src/node/server.js &
+      run: cd test2 && node src/node/server.js > test2/test2log.txt &
 
     - name: Git clone etherpad to test3
       run: git clone https://github.com/ether/etherpad-lite.git test3
@@ -61,7 +61,7 @@ jobs:
       ## TODO REMOVE socket-namespace once merged!
 
     - name: start etherpad >> test3
-      run: cd test3 && node src/node/server.js &
+      run: cd test3 && node src/node/server.js > test3/test3log.txt &
 
     - name: support 1 pad per instances
       run: sed 's/5/1/g' settings.json.template > settings.json
@@ -108,6 +108,24 @@ jobs:
         name: proxy
         path: proxyLog.txt
 
+    - name: test1 log
+      uses: actions/upload-artifact@v2
+      with:
+        name: proxy
+        path: test1/test1log.txt
+
+    - name: test2 log
+      uses: actions/upload-artifact@v2
+      with:
+        name: proxy
+        path: test2/test1log.txt
+
+    - name: test3 log
+      uses: actions/upload-artifact@v2
+      with:
+        name: proxy
+        path: test3/test1log.txt
+
     - name: Test1 DB
       uses: actions/upload-artifact@v2
       with:
@@ -128,12 +146,6 @@ jobs:
 
     - name: See test1db
       run: cat test1/var/dirty.db
-
-    - name: check sometimes
-      run: if [[ $(grep -oE '(test1|test2|test3)' test1/var/dirty.db | sort -u | wc -l) -gt 1 ]]; then echo bad; else echo good; fi
-
-    - name: check test1 has just one pad.
-      run: grep -oE '(test1|test2|test3)' test1/var/dirty.db | sort -u | wc -l
 
     - name: check test1 has just one pad.
       run: test $(grep -oE '(test1|test2|test3)' test1/var/dirty.db | sort -u | wc -l) -eq 1
