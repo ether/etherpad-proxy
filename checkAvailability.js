@@ -19,5 +19,6 @@ exports.checkAvailability = async (backends, interval, maxPadsPerInstance) => {
       available = available.filter((backend) => backend !== backendId);
     }
   }
+  console.log('returning available backends of', available);
   return available;
 };
