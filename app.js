@@ -85,21 +85,24 @@ const createRoute = (padId, req, res, socket, head) => {
         initiateRoute(r.backend, req, res, socket, head);
       } else {
         // not available..
-        // console.log(`hit backend not available: ${padId} <> ${r.backend}`);
+        console.log(`hit backend not available: ${padId} <> ${r.backend}`);
         const newBackend = availableBackends[Math.floor(Math.random() * availableBackends.length)];
         // set and store a new backend
         db.set(`padId:${padId}`, {
           backend: newBackend,
         });
+        console.log(`creating new association: ${padId} <> ${newBackend}`);
         initiateRoute(newBackend, req, res, socket, head);
       }
     } else {
       // if no backend is stored for this pad, create a new connection
+      console.log(availableBackends);
       const newBackend = availableBackends[Math.floor(Math.random() * availableBackends.length)];
       db.set(`padId:${padId}`, {
         backend: newBackend,
       });
-      console.log(`database miss: ${padId} <> ${newBackend}`);
+      if (!availableBackends) console.log('no available backends!');
+      console.log(`database miss, initiating new association: ${padId} <> ${newBackend}`);
       initiateRoute(newBackend, req, res, socket, head);
     }
   });
