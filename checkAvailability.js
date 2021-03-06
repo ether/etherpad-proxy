@@ -8,14 +8,12 @@ exports.checkAvailability = async (backends, interval, maxPadsPerInstance) => {
     // query if it's free
     const stats = await superagent.get(`http://${backend.host}:${backend.port}/stats`);
     const activePads = JSON.parse(stats.text).activePads || 0;
-    console.log(`${backendId}: ${activePads}`);
     if (activePads === 0) {
-      // console.log(`Free backend: ${backend} with ${activePads} active pads`);
-      console.log(`free backend: ${backendId}: ${activePads}`);
+      // console.log(`free backend: ${backendId}: ${activePads}`);
       return backendId;
     }
     if (activePads < maxPadsPerInstance) {
-      console.log(`available backend: ${backendId}: ${activePads}`);
+      // console.log(`available backend: ${backendId}: ${activePads}`);
       return backendId;
     } else {
       available = available.filter((backend) => backend !== backendId);
@@ -25,14 +23,14 @@ exports.checkAvailability = async (backends, interval, maxPadsPerInstance) => {
     // there is an available backend so send it to that..
     // we should of done this above tho..
     const randomBackend = available[Math.floor(Math.random() * available.length)];
-    console.log(`random available backend: ${randomBackend}`);
+    // console.log(`random available backend: ${randomBackend}`);
     return randomBackend;
   } else {
     // no available backends so send it to a random backend XD
     // TODO future, support an error message if no backends are available?
     const randomBackend =
         Object.keys(backends)[Math.floor(Math.random() * Object.keys(backends).length)];
-    console.log(`Full up: random backend: ${randomBackend}`);
+    // console.log(`Full up: random backend: ${randomBackend}`);
     return randomBackend;
   }
 };
