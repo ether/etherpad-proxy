@@ -79,18 +79,18 @@ jobs:
       run: curl --connect-timeout 10 --max-time 20 --retry 5 --retry-delay 10 --retry-max-time 60 --retry-connrefused http://127.0.0.1:9003/p/test
 
     - name: Load test >> test1
-      run: etherpad-loadtest http://localhost:9000/p/test1 -d 60 &
+      run: etherpad-loadtest http://localhost:9000/p/test1 -d 20 &
 
     - name: Load test >> test2
-      run: etherpad-loadtest http://localhost:9000/p/test2 -d 60 &
+      run: etherpad-loadtest http://localhost:9000/p/test2 -d 20 &
 
     - name: Load test >> test3
-      run: etherpad-loadtest http://localhost:9000/p/test3 -d 60 &
+      run: etherpad-loadtest http://localhost:9000/p/test3 -d 20 &
 
-    - name: Sleep for 30 seconds
+    - name: Sleep for 20 seconds
       uses: jakejarvis/wait-action@master
       with:
-        time: '30s'
+        time: '20s'
 
     - name: proxy log
       uses: actions/upload-artifact@v2
