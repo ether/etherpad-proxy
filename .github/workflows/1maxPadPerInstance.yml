@@ -118,13 +118,13 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: proxy
-        path: test2/test1log.txt
+        path: test2/test2log.txt
 
     - name: test3 log
       uses: actions/upload-artifact@v2
       with:
         name: proxy
-        path: test3/test1log.txt
+        path: test3/test3log.txt
 
     - name: Test1 DB
       uses: actions/upload-artifact@v2
