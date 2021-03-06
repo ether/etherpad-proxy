@@ -70,7 +70,7 @@ jobs:
       run: cat settings.json
 
     - name: Start proxy
-      run: node app.js &
+      run: node app.js & > proxyLog.txt
 
     - name: Install etherpad-load-test
       run: npm install etherpad-load-test -g
@@ -101,6 +101,30 @@ jobs:
       uses: jakejarvis/wait-action@master
       with:
         time: '30s'
+
+    - name: proxy log
+      uses: actions/upload-artifact@v2
+      with:
+        name: proxy
+        path: proxyLog.txt
+
+    - name: Test1 DB
+      uses: actions/upload-artifact@v2
+      with:
+        name: test1
+        path: test1/var/dirty.db
+
+    - name: Test2 DB
+      uses: actions/upload-artifact@v2
+      with:
+        name: test2
+        path: test2/var/dirty.db
+
+    - name: Test3 DB
+      uses: actions/upload-artifact@v2
+      with:
+        name: test3
+        path: test3/var/dirty.db
 
     - name: See test1db
       run: cat test1/var/dirty.db
