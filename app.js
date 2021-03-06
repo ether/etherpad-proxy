@@ -100,7 +100,7 @@ db.init(() => {
   const proxyServer = http.createServer((req, res) => {
     let padId;
     if (req.url.indexOf('/p/') !== -1) {
-      padId = req.url.split('/p/')[1].split('?')[0];
+      padId = req.url.split('/p/')[1].split('?')[0].split('/')[0];
       console.log(`initial request to /p/${padId}`);
     }
     const searchParams = new URLSearchParams(req.url);
