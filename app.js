@@ -19,7 +19,7 @@ const loadSettings = () => {
 };
 
 const settings = loadSettings();
-console.log(settings);
+console.debug(`Settings: ${settings}`);
 if (settings.dbType === 'dirty') console.error('DirtyDB is not recommend for production');
 
 const backendIds = Object.keys(settings.backends);
@@ -42,7 +42,7 @@ const db = new ueberdb.Database(settings.dbType, settings.dbSettings);
 // Initiate the proxy routes to the backends
 const initiateRoute = (backend, req, res, socket, head) => {
   if (res) {
-    console.log('backend: ', backend);
+    // console.log('backend: ', backend);
     proxies[backend].web(req, res, (e) => {
       console.error(e);
     });
@@ -66,7 +66,7 @@ const createRoute = (padId, req, res, socket, head) => {
   // pad specific backend required, do we have a backend already?
   db.get(`padId:${padId}`, (e, r) => {
     if (r && r.backend) {
-      console.log(`database hit: ${padId} <> ${r.backend}`);
+      // console.log(`database hit: ${padId} <> ${r.backend}`);
       initiateRoute(r.backend, req, res, socket, head);
     } else {
       if (!availableBackend) {

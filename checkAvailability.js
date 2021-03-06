@@ -24,10 +24,15 @@ exports.checkAvailability = async (backends, interval, maxPadsPerInstance) => {
   if (available.length) {
     // there is an available backend so send it to that..
     // we should of done this above tho..
-    return available[Math.floor(Math.random() * available.length)];
+    const randomBackend = available[Math.floor(Math.random() * available.length)];
+    console.log(`random available backend: ${randomBackend}`);
+    return randomBackend;
   } else {
     // no available backends so send it to a random backend XD
     // TODO future, support an error message if no backends are available?
-    return Object.keys(backends)[Math.floor(Math.random() * Object.keys(backends).length)];
+    const randomBackend =
+        Object.keys(backends)[Math.floor(Math.random() * Object.keys(backends).length)];
+    console.log(`Full up: random backend: ${randomBackend}`);
+    return randomBackend;
   }
 };
