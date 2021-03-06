@@ -9,17 +9,17 @@ const loadSettings = () => {
   const fs = require('fs');
   let settings;
   try {
-    fs.readFileSync('settings.json', 'utf8');
+    settings = fs.readFileSync('settings.json', 'utf8');
     return JSON.parse(settings);
   } catch (e) {
     console.error('Please create your own settings.json file');
-    const settings = fs.readFileSync('settings.json.template', 'utf8');
+    settings = fs.readFileSync('settings.json.template', 'utf8');
     return JSON.parse(settings);
   }
 };
 
 const settings = loadSettings();
-console.debug(`Settings: ${settings}`);
+console.debug(settings);
 if (settings.dbType === 'dirty') console.error('DirtyDB is not recommend for production');
 
 const backendIds = Object.keys(settings.backends);
