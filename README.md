@@ -1,9 +1,9 @@
 [![Proxy Test: 3 Pads <> 3 Unique Backends](https://github.com/ether/etherpad-proxy/actions/workflows/1maxPadPerInstance.yml/badge.svg)](https://github.com/ether/etherpad-proxy/actions/workflows/1maxPadPerInstance.yml) [![Proxy Test: 9 Pads <> 3 Backends](https://github.com/ether/etherpad-proxy/actions/workflows/3maxPadPerInstance.yml/badge.svg)](https://github.com/ether/etherpad-proxy/actions/workflows/3maxPadPerInstance.yml) [![Somewhat faster assignment Proxy Test: 3 Pads <> 3 Unique Backends](https://github.com/ether/etherpad-proxy/actions/workflows/rapidUniqueness.yml/badge.svg)](https://github.com/ether/etherpad-proxy/actions/workflows/rapidUniqueness.yml) [![Lint](https://github.com/ether/etherpad-proxy/actions/workflows/lint-package-lock.yml/badge.svg)](https://github.com/ether/etherpad-proxy/actions/workflows/lint-package-lock.yml)
 
-# Experimental Reverse Proxy for Etherpad
-This is a reverse proxy that runs on port 9000 which will route(shard) pads based on padId(within query[currently in socket-namespace branch of Etherpad core]) to a pool of backends.
+# Sharding Reverse Proxy for Etherpad
+This is a reverse proxy that which will shard pads based on padId(within query[currently in socket-namespace branch of Etherpad core]) to a pool of backends based on the availability of the backends which is based on the number of concurrent active Pads being edited.
 
-It's likely that this project will only get to proof of concept stage(see V0) and then something that integrates with HAProxy/Varnish et al will replace it as NodeJS is probably not the right tool for the job but having the high level management system written in NodeJS makes sense.
+It's likely that this project will only get to proof of concept stage(see V0) and then something that integrates with HAProxy/Varnish et al will replace it as NodeJS is probably not the right tool for the job but having the high level management system written in NodeJS makes sense to discover potential pitfalls and best practices.
 
 ## Getting started
 Copy ``settings.json.template`` to ``settings.json`` and modify the values.
@@ -13,8 +13,10 @@ Copy ``settings.json.template`` to ``settings.json`` and modify the values.
 node app.js
 ```
 
+Visit http://localhost:9000
+
 ## Settings
-Settings come from settings.json, see settings.json.template for an example to modify for your environment.
+Settings come from ``settings.json``, see ``settings.json.template`` for an example to modify for your environment.
 
 ``backends`` is your Backend Etherpad instances.
 
@@ -22,14 +24,14 @@ Settings come from settings.json, see settings.json.template for an example to m
 
 ``checkInterval`` is how often to check every backend for availability.  You should set this to a low number if you have lower number of very active instances with short pad life.  You should set this to a high number if you have lost of instances with relatively long pad life expectancy.
 
-For database settings/options please see UeberDB https://github.com/etherpad-lite
+For database settings/options please see UeberDB https://github.com/ether/ueberdb
 
 ## V0
 - [ ] Don't try to route anything to any backends that aren't responding
 
 ## V1
 - [ ] Test in production.
-  - [ ] Export endpoints
+  - [ ] Export endpoints <-- pretty sure this is currently broken (as padid might not be right - I think it just needs a split)
   - [ ] Comments Plugin
 - [ ] Remove backend if it's not available.
 - [ ] Figure out why changing ``1000`` to ``200`` for ``checkInterval`` makes tests fail.
@@ -38,12 +40,6 @@ For database settings/options please see UeberDB https://github.com/etherpad-lit
 - [ ] If no backends are available, send a message explaining "we're full up"
 - [ ] Currently pads are stuck to backends permanently, this is bad if they are revisited,
  ergo pads should only have a certain staleness allowed at which point they should be nuked from the proxy database.
-
-## V2
-- [ ] Consider if multiple backends should serve static files or fall back to 9001 (as per current)
-    - Advantage of single point = Only have to update plugin files there.
-    - Disadvantage - single point of failure, plugins might be out of sync, plugin backend/frontend might bt out of sync.
-    - Conclusion: I think a pads static content should come from where it gets it's content from, but then there are more complications especially surrounding export URIs..  
 
 # License
 Apache 2
