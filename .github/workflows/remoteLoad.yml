@@ -1,0 +1,86 @@
+name: "Somewhat faster assignment Proxy Test: 3 Pads <> 3 Unique Backends"
+
+#on:
+#  schedule:
+    # 2am
+#    - cron:  '* 2 * * *'
+on: [push, pull_request]
+
+
+jobs:
+  buildJS:
+    name: Load tests shard.etherpad.com
+    runs-on: ubuntu-latest
+
+    - uses: actions/setup-node@v2
+      with:
+        node-version: 15
+
+    - name: Install etherpad-load-test
+      run: npm install etherpad-load-test -g
+
+    - name: Install Cypress
+      run: npm install cypress -g
+
+    - name: Grab Cypress test file
+      run: wget https://raw.githubusercontent.com/ether/etherpad-lite/develop/src/tests/frontend/cypress/integration/test.js
+
+    - name: Run test against shard1
+      run: cypress run --spec test.js --config baseUrl='https://shard1.etherpad.com/p/whatever'
+
+    - name: Run test against shard2
+      run: cypress run --spec test.js --config baseUrl='https://shard2.etherpad.com/p/whatever'
+
+    - name: Run test against shard3
+      run: cypress run --spec test.js --config baseUrl='https://shard3.etherpad.com/p/whatever'
+
+    - name: Load test
+      run: etherpad-loadtest https://shard.etherpad.com -d 20 > runner1.txt &
+
+    - name: Sleep for 2 seconds
+      uses: jakejarvis/wait-action@master
+      with:
+        time: '2s'
+
+    - name: Load test
+      run: etherpad-loadtest https://shard.etherpad.com -d 20 > runner2.txt  &
+
+    - name: Sleep for 2 seconds
+      uses: jakejarvis/wait-action@master
+      with:
+        time: '2s'
+
+    - name: Load test
+      run: etherpad-loadtest https://shard.etherpad.com -d 20 > runner3.txt  &
+
+    - name: Sleep for 30 seconds
+      uses: jakejarvis/wait-action@master
+      with:
+        time: '30s'
+
+    - name: runner1
+      uses: actions/upload-artifact@v2
+      with:
+        name: runner1
+        path: runner1.txt
+
+    - name: runner2
+      uses: actions/upload-artifact@v2
+      with:
+        name: runner2
+        path: runner2.txt
+
+    - name: runner3
+      uses: actions/upload-artifact@v2
+      with:
+        name: runner3
+        path: runner3.txt
+
+    - name: check test1 has just one pad.
+      run: test $(grep -oE '(test1|test2|test3)' test1/var/dirty.db | sort -u | wc -l) -eq 1
+
+    - name: check test2 has just one pad.
+      run: test $(grep -oE '(test1|test2|test3)' test2/var/dirty.db | sort -u | wc -l) -eq 1
+
+    - name: check test3 has just one pad.
+      run: test $(grep -oE '(test1|test2|test3)' test3/var/dirty.db | sort -u | wc -l) -eq 1
