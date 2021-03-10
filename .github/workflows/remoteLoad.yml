@@ -22,17 +22,26 @@ jobs:
     - name: Install Cypress
       run: npm install cypress -g
 
+    - name: Setup file system
+      run: mkdir cypress
+
+    - name: Setup file system
+      run: cd cypress && mkdir integration
+
     - name: Grab Cypress test file
-      run: wget https://raw.githubusercontent.com/ether/etherpad-lite/develop/src/tests/frontend/cypress/integration/test.js
+      run: cd cypress/integration && wget https://raw.githubusercontent.com/ether/etherpad-lite/develop/src/tests/frontend/cypress/integration/test.js
+
+    - name: Modify test file to not target 9001
+      run: cd cypress/integration && sed 's/http:\/\/127.0.0.1:9001'//g test.js > test.js
 
     - name: Run test against shard1
-      run: cypress run --spec test.js --config baseUrl='https://shard1.etherpad.com/p/whatever'
+      run: cypress run --config baseUrl=https://shard1.etherpad.com --config-file=false
 
     - name: Run test against shard2
-      run: cypress run --spec test.js --config baseUrl='https://shard2.etherpad.com/p/whatever'
+      run: cypress run --config baseUrl=https://shard2.etherpad.com --config-file=false
 
     - name: Run test against shard3
-      run: cypress run --spec test.js --config baseUrl='https://shard3.etherpad.com/p/whatever'
+      run: cypress run --config baseUrl=https://shard3.etherpad.com --config-file=false
 
     - name: Load test
       run: etherpad-loadtest https://shard.etherpad.com -d 20 > runner1.txt &
