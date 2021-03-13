@@ -1,4 +1,4 @@
-name: "Somewhat faster assignment Proxy Test: 3 Pads <> 3 Unique Backends"
+name: "Remote Load"
 
 #on:
 #  schedule:
