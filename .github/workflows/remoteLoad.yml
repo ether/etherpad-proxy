@@ -1,3 +1,6 @@
+# NOTE: This test only checks number of lines in the test.  This is lazy.
+# It should check number of accepted commits but at the time
+
 name: "Remote Load"
 
 #on:
