@@ -44,7 +44,7 @@ jobs:
       run: cypress run --config baseUrl=https://shard3.etherpad.com --config-file=false
 
     - name: Load test
-      run: etherpad-loadtest https://shard.etherpad.com -d 20 > runner1.txt &
+      run: etherpad-loadtest https://shard.etherpad.com -d 15 > runner1.txt &
 
     - name: Sleep for 2 seconds
       uses: jakejarvis/wait-action@master
@@ -52,7 +52,7 @@ jobs:
         time: '2s'
 
     - name: Load test
-      run: etherpad-loadtest https://shard.etherpad.com -d 20 > runner2.txt  &
+      run: etherpad-loadtest https://shard.etherpad.com -d 15 > runner2.txt  &
 
     - name: Sleep for 2 seconds
       uses: jakejarvis/wait-action@master
@@ -60,7 +60,7 @@ jobs:
         time: '2s'
 
     - name: Load test
-      run: etherpad-loadtest https://shard.etherpad.com -d 20 > runner3.txt  &
+      run: etherpad-loadtest https://shard.etherpad.com -d 15 > runner3.txt  &
 
     - name: Sleep for 30 seconds
       uses: jakejarvis/wait-action@master
@@ -85,7 +85,7 @@ jobs:
         name: runner3
         path: runner3.txt
 
-    - name: check test1 has just one pad.
+    - name: check runner1 has .
       run: test $(grep -oE '(test1|test2|test3)' test1/var/dirty.db | sort -u | wc -l) -eq 1
 
     - name: check test2 has just one pad.
