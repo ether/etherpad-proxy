@@ -1,0 +1,137 @@
+name: "Somewhat faster assignment Proxy Test: 3 Pads <> 3 Unique Backends"
+
+# any branch is useful for testing before a PR is submitted
+on: [push, pull_request]
+
+jobs:
+  deployAndLoadTest:
+    # run on pushes to any branch
+    # run on PRs from external forks
+    if: |
+         (github.event_name != 'pull_request')
+         || (github.event.pull_request.head.repo.id != github.event.pull_request.base.repo.id)
+    name: 3 Pads <> 3 Unique Backends
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - uses: actions/setup-node@v2
+      with:
+        node-version: 15
+
+    - name: install dependencies
+      run: npm i
+
+      # install and run etherpad on ports 9001, 9002 and 9003
+    - name: Git clone etherpad to test1
+      run: git clone https://github.com/ether/etherpad-lite.git test1
+
+    - name: prep etherpad >> test1
+      run: cd test1/src && git checkout socket-namespace && npm i --no-optional
+      ## TODO REMOVE socket-namespace once merged!
+
+    - name: start etherpad >> test1
+      run: cd test1 && node src/node/server.js &
+
+    - name: Git clone etherpad to test2
+      run: git clone https://github.com/ether/etherpad-lite.git test2
+
+    - name: Change port to 9002
+      # "port" : 9001 >> "port" :9002
+      run: sed 's/9001/9002/g' test2/settings.json.template > test2/settings.json
+
+    - name: prep etherpad >> test2
+      run: cd test2/src && git checkout socket-namespace && npm i --no-optional
+      ## TODO REMOVE socket-namespace once merged!
+
+    - name: start etherpad >> test2
+      run: cd test2 && node src/node/server.js &
+
+    - name: Git clone etherpad to test3
+      run: git clone https://github.com/ether/etherpad-lite.git test3
+
+    - name: Change port to 9003
+      # "port" : 9001 >> "port" :9002
+      run: sed 's/9001/9003/g' test2/settings.json.template > test3/settings.json
+
+    - name: prep etherpad >> test3
+      run: cd test3/src && git checkout socket-namespace && npm i --no-optional
+      ## TODO REMOVE socket-namespace once merged!
+
+    - name: start etherpad >> test3
+      run: cd test3 && node src/node/server.js &
+
+    - name: support 1 pad per instances
+      run: sed 's/5/1/g' settings.json.template > settings.json
+
+    - name: check settings
+      run: cat settings.json
+
+    - name: Start proxy
+      run: node app.js > proxyLog.txt &
+
+    - name: Install etherpad-load-test
+      run: npm install etherpad-load-test -g
+
+    - name: wait for Etherpad
+      run: curl --connect-timeout 10 --max-time 20 --retry 5 --retry-delay 10 --retry-max-time 60 --retry-connrefused http://127.0.0.1:9003/p/test
+
+    - name: Load test >> test1
+      run: etherpad-loadtest http://localhost:9000/p/test1 -d 20 &
+
+    - name: Sleep for 1 seconds
+      uses: jakejarvis/wait-action@master
+      with:
+        time: '1s'
+
+    - name: Load test >> test2
+      run: etherpad-loadtest http://localhost:9000/p/test2 -d 20 &
+
+
+    - name: Sleep for 1 seconds
+      uses: jakejarvis/wait-action@master
+      with:
+        time: '1s'
+
+    - name: Load test >> test3
+      run: etherpad-loadtest http://localhost:9000/p/test3 -d 20 &
+
+    - name: Sleep for 20 seconds
+      uses: jakejarvis/wait-action@master
+      with:
+        time: '20s'
+
+    - name: proxy log
+      uses: actions/upload-artifact@v2
+      with:
+        name: proxy
+        path: proxyLog.txt
+
+    - name: Test1 DB
+      uses: actions/upload-artifact@v2
+      with:
+        name: test1
+        path: test1/var/dirty.db
+
+    - name: Test2 DB
+      uses: actions/upload-artifact@v2
+      with:
+        name: test2
+        path: test2/var/dirty.db
+
+    - name: Test3 DB
+      uses: actions/upload-artifact@v2
+      with:
+        name: test3
+        path: test3/var/dirty.db
+
+    - name: check test1 has just one pad.
+      run: test $(grep -oE '(test1|test2|test3)' test1/var/dirty.db | sort -u | wc -l) -eq 1
+
+    - name: check test2 has just one pad.
+      run: test $(grep -oE '(test1|test2|test3)' test2/var/dirty.db | sort -u | wc -l) -eq 1
+
+    - name: check test3 has just one pad.
+      run: test $(grep -oE '(test1|test2|test3)' test3/var/dirty.db | sort -u | wc -l) -eq 1
