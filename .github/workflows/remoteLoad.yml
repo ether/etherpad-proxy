@@ -3,11 +3,11 @@
 
 name: "Remote Load"
 
-#on:
-#  schedule:
+on:
+  schedule:
     # 2am
-#    - cron:  '* 2 * * *'
-on: [push, pull_request]
+    - cron:  '* 2 * * *'
+# on: [push, pull_request]
 
 jobs:
   load:
