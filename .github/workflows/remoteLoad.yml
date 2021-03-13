@@ -6,13 +6,12 @@ name: "Remote Load"
 #    - cron:  '* 2 * * *'
 on: [push, pull_request]
 
-
 jobs:
-  buildJS:
-    name: Load tests shard.etherpad.com
+  load:
+    name: LoadTest
     runs-on: ubuntu-latest
 
-    - uses: actions/setup-node@v2
+    uses: actions/setup-node@v2
       with:
         node-version: 15
 
