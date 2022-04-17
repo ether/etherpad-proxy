@@ -110,25 +110,25 @@ jobs:
         time: '20s'
 
     - name: proxy log
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: proxy
         path: proxyLog.txt
 
     - name: Test1 DB
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: test1
         path: test1/var/dirty.db
 
     - name: Test2 DB
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: test2
         path: test2/var/dirty.db
 
     - name: Test3 DB
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: test3
         path: test3/var/dirty.db

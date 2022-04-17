@@ -109,43 +109,43 @@ jobs:
         time: '30s'
 
     - name: proxy log
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: proxy
         path: proxyLog.txt
 
     - name: test1 log
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: proxy
         path: test1/test1log.txt
 
     - name: test2 log
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: proxy
         path: test2/test2log.txt
 
     - name: test3 log
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: proxy
         path: test3/test3log.txt
 
     - name: Test1 DB
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: test1
         path: test1/var/dirty.db
 
     - name: Test2 DB
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: test2
         path: test2/var/dirty.db
 
     - name: Test3 DB
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: test3
         path: test3/var/dirty.db
