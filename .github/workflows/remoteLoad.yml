@@ -71,19 +71,19 @@ jobs:
         time: '30s'
 
     - name: runner1
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: runner1
         path: runner1.txt
 
     - name: runner2
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: runner2
         path: runner2.txt
 
     - name: runner3
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: runner3
         path: runner3.txt
