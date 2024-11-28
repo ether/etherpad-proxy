@@ -6,34 +6,6 @@ on: [push, pull_request]
 
 jobs:
   deployAndLoadTest:
-    services:
-      etherpad1:
-        options:
-            --name etherpad1
-        image: etherpad/etherpad
-        ports:
-          - 9001:9001
-        volumes:
-          - "./support/settings.json:/opt/etherpad-lite/settings.json"
-          - "./test1:/opt/etherpad-lite/var"
-      etherpad2:
-        image: etherpad/etherpad
-        options:
-            --name etherpad2
-        ports:
-          - 9002:9001
-        volumes:
-          - "./support/settings.json:/opt/etherpad-lite/settings.json"
-          - "./test2:/opt/etherpad-lite/var"
-      etherpad3:
-        options:
-            --name etherpad3
-        image: etherpad/etherpad
-        ports:
-          - 9003:9001
-        volumes:
-          - "./support/settings.json:/opt/etherpad-lite/settings.json"
-          - "./test3:/opt/etherpad-lite/var"
     # run on pushes to any branch
     # run on PRs from external forks
     if: |
@@ -65,6 +37,9 @@ jobs:
               ${{ runner.os }}-pnpm-store-
     - name: install dependencies
       run: pnpm i
+
+    - name: Setup etherpads
+      run: docker-compose up -d
 
     - name: support 1 pad per instances
       run: sed 's/5/1/g' settings.json.template > settings.json
