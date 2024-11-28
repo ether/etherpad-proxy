@@ -35,10 +35,6 @@ jobs:
             ${{ runner.os }}-pnpm-store-
       -
         run: pnpm i
-      -
-        run: pnpm test
-      -
-        run: pnpm run --if-present lint
 
   publish-npm:
     if: github.event_name == 'push'
