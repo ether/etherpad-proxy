@@ -8,7 +8,8 @@ jobs:
   deployAndLoadTest:
     services:
       etherpad1:
-        container_name: etherpad1
+        options:
+            --name etherpad1
         image: etherpad/etherpad
         ports:
           - 9001:9001
@@ -17,14 +18,16 @@ jobs:
           - "./test1:/opt/etherpad-lite/var"
       etherpad2:
         image: etherpad/etherpad
-        container_name: etherpad2
+        options:
+            --name etherpad2
         ports:
           - 9002:9001
         volumes:
           - "./support/settings.json:/opt/etherpad-lite/settings.json"
           - "./test2:/opt/etherpad-lite/var"
       etherpad3:
-        container_name: etherpad3
+        options:
+            --name etherpad3
         image: etherpad/etherpad
         ports:
           - 9003:9001
