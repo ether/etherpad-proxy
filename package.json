@@ -1,6 +1,6 @@
 {
   "name": "etherpad-proxy",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Etherpad Reverse Proxy",
   "main": "app.js",
   "dependencies": {
