@@ -36,7 +36,7 @@ jobs:
           ${{ runner.os }}-pnpm-store-
 
     - name: install dependencies
-      run: npm i
+      run: pnpm i
 
       # install and run etherpad on ports 9001, 9002 and 9003
     - name: Git clone etherpad to test1
@@ -46,7 +46,7 @@ jobs:
         path: test1
 
     - name: prep etherpad >> test1
-      run: cd test1/src && npm i --no-optional
+      run: cd test1/src && pnpm i
 
     - name: start etherpad >> test1
       run: cd test1 && node src/node/server.js &
@@ -62,7 +62,7 @@ jobs:
       run: sed 's/9001/9002/g' test2/settings.json.template > test2/settings.json
 
     - name: prep etherpad >> test2
-      run: cd test2/src && npm i --no-optional
+      run: cd test2/src && pnpm i
 
     - name: start etherpad >> test2
       run: cd test2 && node src/node/server.js &
@@ -78,19 +78,19 @@ jobs:
       run: sed 's/9001/9003/g' test2/settings.json.template > test3/settings.json
 
     - name: prep etherpad >> test3
-      run: cd test3/src && npm i --no-optional
+      run: cd test3/src && pnpm i
 
     - name: start etherpad >> test3
-      run: cd test3 && node src/node/server.js &
+      run: cd test3 && pnpm run prod &
 
     - name: support 3 pads per instances
       run: sed 's/5/3/g' settings.json.template > settings.json
 
     - name: Start proxy
-      run: node app.js &
+      run: pnpm run start &
 
     - name: Install etherpad-load-test
-      run: npm install etherpad-load-test -g
+      run: pnpm install etherpad-load-test -g
 
     - name: wait for Etherpad
       run: curl --connect-timeout 10 --max-time 20 --retry 5 --retry-delay 10 --retry-max-time 60 --retry-connrefused http://127.0.0.1:9003/p/test
