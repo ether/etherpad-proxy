@@ -1,6 +1,6 @@
 'use strict';
 
-import httpProxy, {type ErrorCallback} from 'http-proxy';
+import httpProxy from 'http-proxy';
 import http from 'http';
 import {Database} from 'ueberdb2';
 import {checkAvailability} from './checkAvailability.ts'
@@ -70,7 +70,7 @@ const initiateRoute = (backend: string, req:http.IncomingMessage, res: http.Serv
 
 // Create dynamically assigned routes based on padIds and ensure that a route for
 // unique padIds are re-used and stuck to a backend -- padId <> backend association.
-const createRoute = (padId: string | null, req, res, socket, head) => {
+const createRoute = (padId: string | null, req: any, res:any, socket:any, head:any) => {
   // If the route isn't for a specific padID IE it's for a static file
   // we can use any of the backends but now let's use the first :)
   if (!padId) {
