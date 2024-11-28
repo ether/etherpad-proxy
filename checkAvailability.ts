@@ -1,7 +1,17 @@
-'use strict';
+import superagent from 'superagent'
 
-exports.checkAvailability = async (backends, interval, maxPadsPerInstance) => {
-  const superagent = require('superagent');
+export type Backend = {
+  host: string,
+  port: number,
+}
+
+export type Backends = {
+  [key: string]: Backend,
+}
+
+
+
+export const checkAvailability = async (backends: Backends, _interval: number, maxPadsPerInstance: number) => {
   let available = Object.keys(backends);
   let up = Object.keys(backends);
   for (const backendId of Object.keys(backends)) {

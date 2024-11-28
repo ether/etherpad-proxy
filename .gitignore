@@ -1,3 +1,4 @@
 node_modules/*
 dirty.db
 settings.json
+.idea

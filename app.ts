@@ -1,12 +1,12 @@
 'use strict';
 
-const httpProxy = require('http-proxy');
-const http = require('http');
-const ueberdb = require('ueberdb2');
-const checkAvailability = require('./checkAvailability').checkAvailability;
+import httpProxy, {type ErrorCallback} from 'http-proxy';
+import http from 'http';
+import {Database} from 'ueberdb2';
+import {checkAvailability} from './checkAvailability.ts'
+import fs from 'fs'
 // load the settings
 const loadSettings = () => {
-  const fs = require('fs');
   let settings;
   try {
     settings = fs.readFileSync('settings.json', 'utf8');
@@ -25,16 +25,19 @@ if (settings.dbType === 'dirty') console.error('DirtyDB is not recommend for pro
 const backendIds = Object.keys(settings.backends);
 
 // An object of our proxy instances
-const proxies = {};
+const proxies: { [key: string]: httpProxy<http.IncomingMessage, http.ServerResponse<http.IncomingMessage>> } = {};
 
 // Making availableBackend globally available.
-let availableBackends;
+let availableBackends: {
+  up: Array<string>,
+  available: Array<string>,
+};
 (async () => {
   checkAvailability(
       settings.backends,
       settings.checkInterval,
       settings.maxPadsPerInstance);
-});
+})();
 // And now grab them every X duration
 setInterval(async () => {
   availableBackends = await checkAvailability(
@@ -44,21 +47,21 @@ setInterval(async () => {
 }, settings.checkInterval);
 
 // Creating our database connection
-const db = new ueberdb.Database(settings.dbType, settings.dbSettings);
+const db = new Database(settings.dbType, settings.dbSettings);
 
 // Initiate the proxy routes to the backends
-const initiateRoute = (backend, req, res, socket, head) => {
+const initiateRoute = (backend: string, req:http.IncomingMessage, res: http.ServerResponse, socket:any, head:any) => {
   if (res) {
     // console.log('backend: ', backend);
     if (proxies[backend]) {
-      proxies[backend].web(req, res, (e) => {
+      proxies[backend].web(req, res,{}, (e) => {
         console.error(e);
       });
     }
   }
   if (socket && head) {
     if (proxies[backend]) {
-      proxies[backend].ws(req, socket, head, (e) => {
+      proxies[backend].ws(req, socket, head, {}, (e) => {
         console.error(e);
       });
     }
@@ -67,7 +70,7 @@ const initiateRoute = (backend, req, res, socket, head) => {
 
 // Create dynamically assigned routes based on padIds and ensure that a route for
 // unique padIds are re-used and stuck to a backend -- padId <> backend association.
-const createRoute = (padId, req, res, socket, head) => {
+const createRoute = (padId: string | null, req, res, socket, head) => {
   // If the route isn't for a specific padID IE it's for a static file
   // we can use any of the backends but now let's use the first :)
   if (!padId) {
@@ -77,6 +80,7 @@ const createRoute = (padId, req, res, socket, head) => {
   }
 
   // pad specific backend required, do we have a backend already?
+  // @ts-ignore
   db.get(`padId:${padId}`, (e, r) => {
     if (r && r.backend) {
       // console.log(`database hit: ${padId} <> ${r.backend}`);
@@ -112,11 +116,12 @@ const createRoute = (padId, req, res, socket, head) => {
   });
 };
 
-db.init(() => {
+db.init();
+
   // Create the backends.
   for (const backendId of backendIds) {
     /* eslint-disable-next-line new-cap */
-    proxies[backendId] = new httpProxy.createProxyServer({
+    proxies[backendId] = httpProxy.createProxyServer({
       target: {
         host: settings.backends[backendId].host,
         port: settings.backends[backendId].port,
@@ -125,16 +130,16 @@ db.init(() => {
   }
   // Create the routes for web traffic to those backends.
   const proxyServer = http.createServer((req, res) => {
-    let padId;
-    if (req.url.indexOf('/p/') !== -1) {
-      padId = req.url.split('/p/')[1].split('?')[0].split('/')[0];
+    let padId: string | null = null;
+    if (req.url!.indexOf('/p/') !== -1) {
+      padId = req.url!.split('/p/')[1].split('?')[0].split('/')[0];
       console.log(`initial request to /p/${padId}`);
     }
-    if (!padId) {
+    if (padId === null) {
       const searchParams = new URLSearchParams(req.url);
       padId = searchParams.get('/socket.io/?padId');
     }
-    createRoute(padId, req, res, null, null);
+    createRoute(padId as string, req, res, null, null);
   });
 
   proxyServer.on('error', (e) => {
@@ -149,4 +154,3 @@ db.init(() => {
   });
 
   proxyServer.listen(settings.port);
-});
