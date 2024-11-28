@@ -46,7 +46,7 @@ jobs:
         path: test1
 
     - name: prep etherpad >> test1
-      run: cd test1/src && pnpm i --no-optional
+      run: cd test1 && pnpm i
 
     - name: start etherpad >> test1
       run: cd test1 && pnpm run prod &
@@ -62,7 +62,7 @@ jobs:
       run: sed 's/9001/9002/g' test2/settings.json.template > test2/settings.json
 
     - name: prep etherpad >> test2
-      run: cd test2/src && pnpm i --no-optional
+      run: cd test2 && pnpm i
 
     - name: start etherpad >> test2
       run: cd test2 && pnpm run prod &
@@ -78,7 +78,7 @@ jobs:
       run: sed 's/9001/9003/g' test2/settings.json.template > test3/settings.json
 
     - name: prep etherpad >> test3
-      run: cd test3/src && pnpm i --no-optional
+      run: cd test3 && pnpm i
 
     - name: start etherpad >> test3
       run: cd test3 && pnpm run prod &
