@@ -47,6 +47,8 @@ jobs:
 
     - name: prep etherpad >> test1
       run: cd test1 && pnpm i
+    - name: Copy settings json for Dirty db to be active
+      run: cp test1/settings.json.template test1/settings.json
 
     - name: start etherpad >> test1
       run: cd test1 && pnpm run prod &
