@@ -49,7 +49,7 @@ jobs:
       run: cd test1/src && pnpm i
 
     - name: start etherpad >> test1
-      run: cd test1 && node src/node/server.js &
+      run: cd test1 && pnpm run prod &
 
     - name: Git clone etherpad to test2
       uses: actions/checkout@v3
@@ -65,7 +65,7 @@ jobs:
       run: cd test2/src && pnpm i
 
     - name: start etherpad >> test2
-      run: cd test2 && node src/node/server.js &
+      run: cd test2 && pnpm run prod &
 
     - name: Git clone etherpad to test3
       uses: actions/checkout@v3

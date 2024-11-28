@@ -49,7 +49,7 @@ jobs:
       run: cd test1/src && pnpm i --no-optional
 
     - name: start etherpad >> test1
-      run: cd test1 && node src/node/server.js &
+      run: cd test1 && pnpm run prod &
 
     - name: Git clone etherpad to test2
       uses: actions/checkout@v3
@@ -65,7 +65,7 @@ jobs:
       run: cd test2/src && pnpm i --no-optional
 
     - name: start etherpad >> test2
-      run: cd test2 && node src/node/server.js &
+      run: cd test2 && pnpm run prod &
 
     - name: Git clone etherpad to test3
       uses: actions/checkout@v3
@@ -81,7 +81,7 @@ jobs:
       run: cd test3/src && pnpm i --no-optional
 
     - name: start etherpad >> test3
-      run: cd test3 && node src/node/server.js &
+      run: cd test3 && pnpm run prod &
 
     - name: support 1 pad per instances
       run: sed 's/5/1/g' settings.json.template > settings.json
@@ -90,7 +90,7 @@ jobs:
       run: cat settings.json
 
     - name: Start proxy
-      run: node app.js > proxyLog.txt &
+      run: pnpm run start > proxyLog.txt &
 
     - name: Install etherpad-load-test
       run: pnpm install etherpad-load-test -g
