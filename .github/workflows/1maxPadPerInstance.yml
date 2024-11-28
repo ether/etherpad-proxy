@@ -3,8 +3,34 @@ name: "Proxy Test: 3 Pads <> 3 Unique Backends"
 # any branch is useful for testing before a PR is submitted
 on: [push, pull_request]
 
+
 jobs:
   deployAndLoadTest:
+    services:
+      etherpad1:
+        container_name: etherpad1
+        image: etherpad/etherpad
+        ports:
+          - 9001:9001
+        volumes:
+          - "./support/settings.json:/opt/etherpad-lite/settings.json"
+          - "./test1:/opt/etherpad-lite/var"
+      etherpad2:
+        image: etherpad/etherpad
+        container_name: etherpad2
+        ports:
+          - 9002:9001
+        volumes:
+          - "./support/settings.json:/opt/etherpad-lite/settings.json"
+          - "./test2:/opt/etherpad-lite/var"
+      etherpad3:
+        container_name: etherpad3
+        image: etherpad/etherpad
+        ports:
+          - 9003:9001
+        volumes:
+          - "./support/settings.json:/opt/etherpad-lite/settings.json"
+          - "./test3:/opt/etherpad-lite/var"
     # run on pushes to any branch
     # run on PRs from external forks
     if: |
@@ -36,53 +62,6 @@ jobs:
               ${{ runner.os }}-pnpm-store-
     - name: install dependencies
       run: pnpm i
-
-      # install and run etherpad on ports 9001, 9002 and 9003
-    - name: Git clone etherpad to test1
-      uses: actions/checkout@v3
-      with:
-        repository: ether/etherpad-lite
-        path: test1
-
-    - name: prep etherpad >> test1
-      run: cd test1 && pnpm i
-    - name: Copy settings json for Dirty db to be active
-      run: cp test1/settings.json.template test1/settings.json
-
-    - name: start etherpad >> test1
-      run: cd test1 && pnpm run prod > test1log.txt &
-
-    - name: Git clone etherpad to test2
-      uses: actions/checkout@v3
-      with:
-        repository: ether/etherpad-lite
-        path: test2
-
-    - name: Change port to 9002
-      # "port" : 9001 >> "port" :9002
-      run: sed 's/9001/9002/g' test2/settings.json.template > test2/settings.json
-
-    - name: prep etherpad >> test2
-      run: cd test2/src && pnpm i
-
-    - name: start etherpad >> test2
-      run: cd test2 && pnpm run prod > test2log.txt &
-
-    - name: Git clone etherpad to test3
-      uses: actions/checkout@v3
-      with:
-        repository: ether/etherpad-lite
-        path: test3
-
-    - name: Change port to 9003
-      # "port" : 9001 >> "port" :9002
-      run: sed 's/9001/9003/g' test2/settings.json.template > test3/settings.json
-
-    - name: prep etherpad >> test3
-      run: cd test3/src && pnpm i
-
-    - name: start etherpad >> test3
-      run: cd test3 && pnpm run prod > test3log.txt &
 
     - name: support 1 pad per instances
       run: sed 's/5/1/g' settings.json.template > settings.json
@@ -122,7 +101,11 @@ jobs:
       uses: jakejarvis/wait-action@master
       with:
         time: '30s'
-
+    - name: "Generate log files"
+      run: |
+        docker logs etherpad1 > test1/test1log.txt
+        docker logs etherpad2 > test2/test2log.txt
+        docker logs etherpad3 > test3/test3log.txt
     - name: proxy log
       uses: actions/upload-artifact@v3
       with:
@@ -151,25 +134,25 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: test1
-        path: test1/var/dirty.db
+        path: test1/dirty.db
 
     - name: Test2 DB
       uses: actions/upload-artifact@v3
       with:
         name: test2
-        path: test2/var/dirty.db
+        path: test2/dirty.db
 
     - name: Test3 DB
       uses: actions/upload-artifact@v3
       with:
         name: test3
-        path: test3/var/dirty.db
+        path: test3/dirty.db
 
     - name: check test1 has just one pad.
-      run: test $(grep -oE '(test1|test2|test3)' test1/var/dirty.db | sort -u | wc -l) -eq 1
+      run: test $(grep -oE '(test1|test2|test3)' test1/dirty.db | sort -u | wc -l) -eq 1
 
     - name: check test2 has just one pad.
-      run: test $(grep -oE '(test1|test2|test3)' test2/var/dirty.db | sort -u | wc -l) -eq 1
+      run: test $(grep -oE '(test1|test2|test3)' test2/dirty.db | sort -u | wc -l) -eq 1
 
     - name: check test3 has just one pad.
-      run: test $(grep -oE '(test1|test2|test3)' test3/var/dirty.db | sort -u | wc -l) -eq 1
+      run: test $(grep -oE '(test1|test2|test3)' test3/dirty.db | sort -u | wc -l) -eq 1

@@ -1,0 +1,6 @@
+{
+  "dbType": "dirty",
+  "dbSettings": {
+    "filename": "var/dirty.db"
+  }
+}
