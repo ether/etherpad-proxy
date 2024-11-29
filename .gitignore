@@ -2,3 +2,6 @@ node_modules/*
 dirty.db
 /settings.json
 .idea
+/test1
+/test2
+/test3

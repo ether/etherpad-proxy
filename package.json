@@ -21,10 +21,14 @@
     "eslint-plugin-prefer-arrow": "^1.2.3",
     "eslint-plugin-promise": "^4.3.1",
     "eslint-plugin-you-dont-need-lodash-underscore": "^6.11.0",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.6",
+    "testcontainers": "^10.15.0",
+    "etherpad-load-test": "^1.0.10"
   },
   "scripts": {
-    "start": "node --require tsx/cjs app.ts"
+    "start": "node --require tsx/cjs app.ts",
+    "test": "vitest"
   },
   "repository": {
     "type": "git",
