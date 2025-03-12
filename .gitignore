@@ -5,3 +5,8 @@ dirty.db
 /test1
 /test2
 /test3
+
+
+# Added by cargo
+
+/target
