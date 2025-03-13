@@ -6,7 +6,7 @@ use crate::stat::Stat;
 
 pub type BackendIdentifier = String;
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Setting {
     pub port: u16,
@@ -30,13 +30,17 @@ impl Into<String> for Backend {
 }
 
 impl Backend {
-    pub fn get_stat(&self) -> Result<Stat, Box<dyn std::error::Error>> {
+    pub async fn get_stat(&self) -> Result<Stat, Box<dyn std::error::Error>> {
+        let response = reqwest::get(<Backend as Into<String>>::into(self.clone())).await?;
+        response.json::<Stat>().await.map_err(|e| e.into())
+    }
+    pub fn get_stat_sync(&self) -> CustomResult<Stat> {
         let response = reqwest::blocking::get(<Backend as Into<String>>::into(self.clone()))?;
         response.json::<Stat>().map_err(|e| e.into())
     }
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct DBSettings {
     pub filename: String,
 }

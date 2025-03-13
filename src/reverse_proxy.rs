@@ -1,13 +1,17 @@
 use crate::db::DB;
 use crate::runtime::AvailableBackends;
-use crate::settings::BackendIdentifier;
-use hyper::{Body, Request, Response, StatusCode, Uri};
+use crate::settings::{BackendIdentifier, Setting};
 use rand::seq::SliceRandom;
 use std::convert::Infallible;
 use std::fmt::format;
 use std::net::IpAddr;
 use std::ops::Index;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, LazyLock, Mutex};
+use axum::body::Body;
+use axum::extract::{Request, State};
+use axum::http::{StatusCode, Uri};
+use axum::response::{IntoResponse, Response};
+use crate::Client;
 
 fn debug_request(req: Request<Body>) -> Result<Response<Body>, Infallible> {
     let body_str = format!("{:?}", req);
@@ -17,7 +21,7 @@ fn debug_request(req: Request<Body>) -> Result<Response<Body>, Infallible> {
 fn create_route(
     pad_id: Option<String>,
     available_backends: Arc<Mutex<AvailableBackends>>,
-    db: DB,
+    db: Arc<Mutex<DB>>,
 ) -> Option<BackendIdentifier> {
     // If the route isn't for a specific padID IE it's for a static file
     // we can use any of the backends but now let's use the first :)
@@ -25,12 +29,14 @@ fn create_route(
         let available_backends = available_backends.lock().unwrap();
         let new_backend = available_backends
             .available
-            .choose(&mut rand::thread_rng())
-            .unwrap();
-        return Some(new_backend.clone());
+            .choose(&mut rand::thread_rng()).cloned();
+        return new_backend;
     }
     let pad_id = pad_id.unwrap();
-    let result = db.get(&format!("padId:{}", pad_id));
+    let result = {
+        let locked_db = db.lock().unwrap();
+        locked_db.get(&format!("padId:{}", pad_id))
+    };
     match result {
         Some(backend_id) => {
             let mut available_backends = available_backends.lock().unwrap();
@@ -51,7 +57,10 @@ fn create_route(
                     .up
                     .choose(&mut rand::thread_rng())
                     .unwrap();
-                db.set(&format!("padId:{}", pad_id), new_backend);
+                {
+                    let locked_db = db.lock().unwrap();
+                    locked_db.set(&format!("padId:{}", pad_id), new_backend);
+                }
                 log::info!(
                     "Creating new association for pad {} with backend {}",
                     pad_id,
@@ -66,14 +75,54 @@ fn create_route(
                 .available
                 .choose(&mut rand::thread_rng())
                 .unwrap();
-            db.set(&format!("padId:{}", pad_id), new_backend);
+            {
+                let mut locked_db = db.lock().unwrap();
+                locked_db.set(&format!("padId:{}", pad_id), new_backend);
+            }
+            log::info!("Creating new association for pad {} with backend {}", pad_id, new_backend);
             if available_backends.available.is_empty() {
                 log::error!("No available backends");
                 return None;
             }
-            Some(pad_id)
+            Some(new_backend.clone())
         }
     }
+}
+
+#[derive(Clone)]
+pub struct StateOfReverseProxy {
+    pub client: Client,
+    pub available_backends: Arc<Mutex<AvailableBackends>>,
+    pub db: Arc<Mutex<DB>>,
+    pub setting: Setting,
+}
+
+pub async fn handler(State(client): State<StateOfReverseProxy>, mut req: Request) ->
+                                                                                  Result<Response,
+    StatusCode> {
+    let path = req.uri();
+    let path_query = req
+        .uri()
+        .path_and_query()
+        .map(|v| v.as_str())
+        .unwrap_or(path.path());
+    let pad_id = get_pad_id(path);
+    let chosen_backend = create_route(pad_id, client.available_backends.clone(), client.db);
+    if let Some(backend_id) = chosen_backend {
+        let backend = client.setting.backends.get(&backend_id).cloned().unwrap();
+        let uri = format!("http://{}:{}{}",backend.host, backend.port, path_query);
+        *req.uri_mut() = Uri::try_from(uri).unwrap();
+    } else {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
+
+    Ok(client
+        .client
+        .request(req)
+        .await
+        .map_err(|_| StatusCode::BAD_REQUEST)?
+        .into_response())
 }
 
 pub fn get_pad_id(uri: &Uri) -> Option<String> {
@@ -98,23 +147,4 @@ pub fn get_pad_id(uri: &Uri) -> Option<String> {
         }
     }
     pad_id
-}
-
-pub async fn handle(client_ip: IpAddr, req: Request<Body>, available_backends:
-Arc<Mutex<AvailableBackends>>, db: DB) -> Result<Response<Body>,
-    Infallible> {
-    let path = req.uri();
-    let pad_id = get_pad_id(path);
-    let chosen_backend = create_route(pad_id, available_backends.clone(), db);
-    match chosen_backend {
-        Some(backend) => {
-            req.uri_mut() =
-            Ok(Response::builder()
-                .status(StatusCode::SERVICE_UNAVAILABLE)
-                .body(Body::empty())?)
-        },
-        None => Ok(Response::builder()
-            .status(StatusCode::SERVICE_UNAVAILABLE)
-            .body(Body::empty())?),
-    }
 }

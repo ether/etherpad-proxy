@@ -1,14 +1,19 @@
-use std::convert::Infallible;
-use std::fmt::format;
-use std::net::SocketAddr;
-use hyper::Server;
-use hyper::server::conn::AddrStream;
-use hyper::service::{make_service_fn, service_fn};
 use crate::db::DB;
 use crate::logging::init_logging;
-use crate::reverse_proxy::handle;
+use crate::reverse_proxy::{handler, StateOfReverseProxy};
 use crate::runtime::get_router_config;
 use crate::settings::Setting;
+use axum::body::Body;
+use axum::extract::Request;
+use axum::http::Response;
+use axum::routing::any_service;
+use axum::Router;
+use hyper_util::client::legacy::connect::HttpConnector;
+use hyper_util::rt::TokioExecutor;
+use std::convert::Infallible;
+use std::sync::{Arc, Mutex};
+use axum::handler::Handler;
+use tower::service_fn;
 
 mod settings;
 mod runtime;
@@ -18,26 +23,29 @@ mod error;
 mod db;
 mod reverse_proxy;
 
+type Client = hyper_util::client::legacy::Client<HttpConnector, Body>;
+
 #[tokio::main]
 async fn main() {
     init_logging();
     let setting = Setting::try_new().expect("failed to load settings");
+    let client: Client =
+        hyper_util::client::legacy::Client::<(), ()>::builder(TokioExecutor::new())
+            .build(HttpConnector::new());
+    let data = get_router_config(&setting).await;
 
-    let addr:SocketAddr = format!("0.0.0.0:{}", setting.port).parse().expect("Could not parse ip:port\
-    .");
+    let arc_db = Arc::new(Mutex::new(DB::new(&setting.db_settings.filename)));
+    let state = StateOfReverseProxy{
+        available_backends: data,
+        db: arc_db,
+        client,
+        setting: setting.clone(),
+    };
+    let app = Router::new().fallback(handler).with_state(state);
 
-    let data = get_router_config(&setting);
-    let db = DB::new(&setting.db_settings.filename);
-    let make_svc = make_service_fn(|conn: &AddrStream| {
-        let remote_addr = conn.remote_addr().ip();
-        async move {
-            Ok::<_, Infallible>(service_fn(move |req| handle(remote_addr, req,data, db)))
-        }
-    });
-    let server = Server::bind(&addr).serve(make_svc);
-    log::info!("Running server on {:?}", addr);
+    let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", setting.port))
+        .await
+        .unwrap();
+    axum::serve(listener, app).await.unwrap();
 
-    if let Err(e) = server.await {
-        log::info!("server error: {}", e);
-    }
 }

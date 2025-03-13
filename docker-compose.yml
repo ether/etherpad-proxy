@@ -1,6 +1,6 @@
 services:
   etherpad1:
-    image: etherpad/etherpad
+    image: etherpad/etherpad:develop
     container_name: etherpad1
     ports:
       - "9001:9001"
@@ -8,7 +8,7 @@ services:
       - "./support/settings.json:/opt/etherpad-lite/settings.json"
       - "./test1:/opt/etherpad-lite/var"
   etherpad2:
-    image: etherpad/etherpad
+    image: etherpad/etherpad:develop
     container_name: etherpad2
     ports:
       - "9002:9001"
@@ -17,7 +17,7 @@ services:
       - "./test2:/opt/etherpad-lite/var"
   etherpad3:
     container_name: etherpad3
-    image: etherpad/etherpad
+    image: etherpad/etherpad:develop
     ports:
       - "9003:9001"
     volumes:

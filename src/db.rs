@@ -10,8 +10,6 @@ pub struct DB {
 impl DB {
     pub fn new(filename: &str) -> DB {
         let conn = Connection::open(filename).expect("Unable to open database");
-        conn.execute("PRAGMA synchronous=NORMAL;", []).unwrap();
-        conn.execute("PRAGMA journal_mode=WAL;", []).unwrap();
         conn.execute("CREATE TABLE IF NOT EXISTS pad (id TEXT, data TEXT);", []).unwrap();
         DB {
             conn
