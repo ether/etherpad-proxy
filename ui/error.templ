@@ -1,0 +1,44 @@
+package ui
+
+templ Error() {
+	<!DOCTYPE html>
+    <html lang="de">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Fehler</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #f8d7da;
+                color: #721c24;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                margin: 0;
+            }
+            .error-container {
+                text-align: center;
+                padding: 20px;
+                border: 1px solid #f5c6cb;
+                background-color: #f8d7da;
+                border-radius: 5px;
+            }
+            .error-container h1 {
+                font-size: 2em;
+                margin: 0;
+            }
+            .error-container p {
+                margin: 10px 0 0;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="error-container">
+            <h1>Ein Fehler ist aufgetreten</h1>
+            <p>Entschuldigung, es gab ein Problem bei der Verarbeitung Ihrer Anfrage.</p>
+        </div>
+    </body>
+    </html>
+}
