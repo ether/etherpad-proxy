@@ -4,9 +4,6 @@ pub struct DB {
     conn: Connection
 }
 
-
-
-
 impl DB {
     pub fn new(filename: &str) -> DB {
         let conn = Connection::open(filename).expect("Unable to open database");

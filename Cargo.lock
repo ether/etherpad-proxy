@@ -424,6 +424,7 @@ dependencies = [
  "hyper-util",
  "log",
  "rand 0.8.5",
+ "regex",
  "reqwest",
  "rusqlite",
  "serde",

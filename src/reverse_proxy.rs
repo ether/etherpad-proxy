@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::db::DB;
 use crate::runtime::AvailableBackends;
 use crate::settings::{BackendIdentifier, Setting};
@@ -12,6 +13,7 @@ use axum::extract::{Request, State};
 use axum::http::{StatusCode, Uri};
 use axum::response::{IntoResponse, Response};
 use crate::Client;
+use regex::Regex;
 
 fn debug_request(req: Request<Body>) -> Result<Response<Body>, Infallible> {
     let body_str = format!("{:?}", req);
@@ -97,6 +99,11 @@ pub struct StateOfReverseProxy {
     pub setting: Setting,
 }
 
+static RESOURCES: LazyLock<HashMap<String, String>> = LazyLock::new(HashMap::new);
+
+static PADINDEX_REGEX: LazyLock<Regex> = LazyLock::new(||Regex::new("^/padbootstrap-[a-zA-Z0-9]+.min.js$").unwrap());
+
+
 pub async fn handler(State(client): State<StateOfReverseProxy>, mut req: Request) ->
                                                                                   Result<Response,
     StatusCode> {
@@ -106,6 +113,8 @@ pub async fn handler(State(client): State<StateOfReverseProxy>, mut req: Request
         .path_and_query()
         .map(|v| v.as_str())
         .unwrap_or(path.path());
+
+
     let pad_id = get_pad_id(path);
     let chosen_backend = create_route(pad_id, client.available_backends.clone(), client.db);
     if let Some(backend_id) = chosen_backend {
@@ -117,12 +126,14 @@ pub async fn handler(State(client): State<StateOfReverseProxy>, mut req: Request
     }
 
 
-    Ok(client
+    let response = client
         .client
         .request(req)
         .await
         .map_err(|_| StatusCode::BAD_REQUEST)?
-        .into_response())
+        .into_response();
+
+    Ok(response)
 }
 
 pub fn get_pad_id(uri: &Uri) -> Option<String> {
@@ -147,4 +158,15 @@ pub fn get_pad_id(uri: &Uri) -> Option<String> {
         }
     }
     pad_id
+}
+
+
+mod tests {
+    use crate::reverse_proxy::PADINDEX_REGEX;
+
+    #[test]
+    fn test_pad_index_regex() {
+        let path = "/padbootstrap-KK7I7qP9I3E.min.js";
+        assert!(PADINDEX_REGEX.is_match(path));
+    }
 }

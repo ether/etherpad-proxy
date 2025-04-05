@@ -1,0 +1,11 @@
+on:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Build app with cargo'
+        run: RUSTFLAGS="-Ctarget-feature=+crt-static" cargo build --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: 'etherpad-proxy'
+          path: './target/release/etherpad-proxy'
