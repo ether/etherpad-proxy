@@ -12,4 +12,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: 'etherpad-proxy'
-          path: './target/release/etherpad-proxy'
+          path: './target/x86_64-unknown-linux-gnu/release/etherpad-proxy'
