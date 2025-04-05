@@ -1,9 +1,12 @@
+name: 'Build etherpad-proxy'
 on:
   push:
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: 'Build app with cargo'
         run: RUSTFLAGS="-Ctarget-feature=+crt-static" cargo build --release
       - uses: actions/upload-artifact@v4
