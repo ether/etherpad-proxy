@@ -39,6 +39,7 @@ func StartServer(settings models.Settings, logger *zap.SugaredLogger) {
 
 	proxies := make(map[string]httputil.ReverseProxy)
 	checkAvailabilityLoop(settings, logger)
+	ScrapeJSFiles(settings)
 
 	for key, backend := range settings.Backends {
 		proxyUrl, err := url.Parse("http://" + backend.Host + ":" + strconv.Itoa(backend.Port))
