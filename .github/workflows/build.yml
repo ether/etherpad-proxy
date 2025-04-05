@@ -22,3 +22,30 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: 'etherpad-proxy'
+      - name: Setup etherpads
+        run: docker compose up -d
+      - name: support 1 pad per instances
+        run: sed 's/5/1/g' settings.json.template > settings.json
+      - name: check settings
+        run: cat settings.json
+      - name: Start proxy
+        run: ./etherpad-proxy &
+      - name: Install etherpad-load-test
+        run: npm install etherpad-load-test -g
+      - name: wait for Etherpad
+        run: curl --connect-timeout 10 --max-time 20 --retry 5 --retry-delay 10 --retry-max-time 60 --retry-connrefused http://127.0.0.1:9003/p/test
+      - name: Load test >> test1
+        run: etherpad-loadtest http://localhost:9000/p/test1 -d 60 &
+      - name: Sleep for 5 seconds
+        uses: jakejarvis/wait-action@master
+        with:
+          time: '5s'
+
+      - name: Load test >> test2
+        run: etherpad-loadtest http://localhost:9000/p/test2 -d 60 &
+      - name: Sleep for 5 seconds
+        uses: jakejarvis/wait-action@master
+        with:
+          time: '5s'
+      - name: Load test >> test3
+        run: etherpad-loadtest http://localhost:9000/p/test3 -d 60 &
