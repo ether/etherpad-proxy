@@ -1,10 +1,7 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::{thread, time};
-use hyper::upgrade::Upgraded;
-use crate::reverse_proxy::StateOfReverseProxy;
 use crate::settings::{Backend, BackendIdentifier, Setting};
-use tokio_tungstenite::WebSocketStream;
 
 #[derive(Default)]
 pub struct AvailableBackends {
@@ -50,7 +47,7 @@ pub async fn check_availability(backends: &HashMap<BackendIdentifier, Backend>,
                     available = available.iter().filter(|b| *b != id).cloned().collect();
                 }
             }
-            Err(e)=>{
+            Err(_)=>{
                 available = available.iter().filter(|b| *b != id).cloned().collect();
                 up = up.iter().filter(|b| *b != id).cloned().collect();
             }
@@ -78,7 +75,7 @@ pub fn check_availability_sync(backends: &HashMap<BackendIdentifier, Backend>,
                     available = available.iter().filter(|b| *b != id).cloned().collect();
                 }
             }
-            Err(e)=>{
+            Err(_)=>{
                 available = available.iter().filter(|b| *b != id).cloned().collect();
                 up = up.iter().filter(|b| *b != id).cloned().collect();
             }

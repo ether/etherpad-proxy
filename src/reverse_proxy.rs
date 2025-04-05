@@ -1,24 +1,12 @@
-use std::collections::HashMap;
 use crate::db::DB;
 use crate::runtime::AvailableBackends;
 use crate::settings::{BackendIdentifier, Setting};
 use rand::seq::SliceRandom;
-use std::convert::Infallible;
-use std::fmt::format;
-use std::net::IpAddr;
-use std::ops::Index;
-use std::sync::{Arc, LazyLock, Mutex};
-use axum::body::Body;
+use std::sync::{Arc, Mutex};
 use axum::extract::{Request, State};
 use axum::http::{StatusCode, Uri};
 use axum::response::{IntoResponse, Response};
 use crate::Client;
-use regex::Regex;
-
-fn debug_request(req: Request<Body>) -> Result<Response<Body>, Infallible> {
-    let body_str = format!("{:?}", req);
-    Ok(Response::new(Body::from(body_str)))
-}
 
 fn create_route(
     pad_id: Option<String>,
@@ -41,7 +29,7 @@ fn create_route(
     };
     match result {
         Some(backend_id) => {
-            let mut available_backends = available_backends.lock().unwrap();
+            let available_backends = available_backends.lock().unwrap();
             if available_backends.available.is_empty() {
                 log::error!("No available backends");
                 return None;
@@ -50,8 +38,7 @@ fn create_route(
             if available_backends
                 .up
                 .iter()
-                .position(|e| e == &backend_id)
-                .is_some()
+                .any(|e| e == &backend_id)
             {
                 Some(backend_id)
             } else {
@@ -78,7 +65,7 @@ fn create_route(
                 .choose(&mut rand::thread_rng())
                 .unwrap();
             {
-                let mut locked_db = db.lock().unwrap();
+                let locked_db = db.lock().unwrap();
                 locked_db.set(&format!("padId:{}", pad_id), new_backend);
             }
             log::info!("Creating new association for pad {} with backend {}", pad_id, new_backend);
@@ -98,10 +85,6 @@ pub struct StateOfReverseProxy {
     pub db: Arc<Mutex<DB>>,
     pub setting: Setting,
 }
-
-static RESOURCES: LazyLock<HashMap<String, String>> = LazyLock::new(HashMap::new);
-
-static PADINDEX_REGEX: LazyLock<Regex> = LazyLock::new(||Regex::new("^/padbootstrap-[a-zA-Z0-9]+.min.js$").unwrap());
 
 
 pub async fn handler(State(client): State<StateOfReverseProxy>, mut req: Request) ->
@@ -158,15 +141,4 @@ pub fn get_pad_id(uri: &Uri) -> Option<String> {
         }
     }
     pad_id
-}
-
-
-mod tests {
-    use crate::reverse_proxy::PADINDEX_REGEX;
-
-    #[test]
-    fn test_pad_index_regex() {
-        let path = "/padbootstrap-KK7I7qP9I3E.min.js";
-        assert!(PADINDEX_REGEX.is_match(path));
-    }
 }

@@ -23,9 +23,9 @@ pub struct Backend {
     pub port: u16,
 }
 
-impl Into<String> for Backend {
-    fn into(self) -> String {
-        format!("http://{}:{}/stats", self.host, self.port)
+impl From<Backend> for String {
+    fn from(val: Backend) -> Self {
+        format!("http://{}:{}/stats", val.host, val.port)
     }
 }
 
