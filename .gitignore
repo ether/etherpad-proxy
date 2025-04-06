@@ -1,5 +1,5 @@
 node_modules/*
-dirty.db
+dirty.db*
 /settings.json
 .idea
 /test1
