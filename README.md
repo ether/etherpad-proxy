@@ -36,8 +36,21 @@ Settings come from ``settings.json``, see ``settings.json.template`` for an exam
 
 ``port`` is the port this service listens on.
 
-## V1
-- [ ] API to create/destroy backends - REF: https://github.com/colyseus/proxy/blob/master/proxy.ts
+## OAuth2 backed Etherpads
+
+``clientId`` is the clientId used to authenticate with the backend Etherpad instances.  This should be a random string that is unique to this service.
+
+``clientSecret`` is the clientSecret used to authenticate with the backend Etherpad instances.  This should be a random string that is unique to this service.
+``tokenURL`` is the URL of the OAuth2 token endpoint. This is normally `http://<your-host>:<your-port>/oidc/token`
+
+## Basic Auth backed Etherpads
+
+``username`` is the username used to authenticate with the backend Etherpad instances.  This should be a random string that is unique to this service.
+
+``password`` is the password used to authenticate with the backend Etherpad instances.  This should be a random string that is unique to this service.
+
+Pads will be fetched every checkInterval * seconds whereas the normal checkInterval runs every checkInterval * milliseconds.
+If pads are deleted they are also deleted from the reverse proxy so it can be reassigned to another backend.
 
 # License
 Apache 2

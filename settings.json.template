@@ -3,11 +3,16 @@
   "backends" : {
     "backend1": {
       "host": "localhost",
-      "port": 9001
+      "port": 9001,
+      "clientId": "admin_client",
+      "clientSecret": "admin",
+      "tokenURL": "http://localhost:9001/oidc/token"
     },
     "backend2": {
       "host": "localhost",
-      "port": 9002
+      "port": 9002,
+      "username": "admin",
+      "password": "admin",
     },
     "backend3": {
       "host": "localhost",
