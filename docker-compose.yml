@@ -23,3 +23,11 @@ services:
     volumes:
       - "./support/settings.json:/opt/etherpad-lite/settings.json"
       - "./test3:/opt/etherpad-lite/var"
+  reverse-proxy:
+    container_name: reverse-proxy
+    image: ghcr.io/ether/etherpad-proxy:latest
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./reverse-proxy/db:/app/db
+      - ./settings.json:/app/settings.json
