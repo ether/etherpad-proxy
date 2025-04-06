@@ -13,6 +13,12 @@ type DBSettings struct {
 }
 
 type Backend struct {
-	Host string `json:"host"`
-	Port int    `json:"port"`
+	Host         string   `json:"host"`
+	Port         int      `json:"port"`
+	ClientId     *string  `json:"clientId"`
+	ClientSecret *string  `json:"clientSecret"`
+	Scopes       []string `json:"scopes"`
+	TokenURL     *string  `json:"tokenUrl"`
+	Username     *string  `json:"username"`
+	Password     *string  `json:"password"`
 }

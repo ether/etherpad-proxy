@@ -19,8 +19,6 @@ import (
 import "math/rand/v2"
 import _ "github.com/ether/etherpad-proxy/ui"
 
-const PadPrefix = "padId:"
-
 type ProxyHandler struct {
 	p      map[string]httputil.ReverseProxy
 	logger *zap.SugaredLogger
@@ -39,6 +37,14 @@ type ResourceNotFound struct {
 }
 
 func (m *ResourceNotFound) Error() string {
+	return "Resource not found"
+}
+
+type ClashInPadId struct {
+	padId string
+}
+
+func (m *ClashInPadId) Error() string {
 	return "Resource not found"
 }
 
@@ -114,24 +120,36 @@ func (ph *ProxyHandler) createRoute(padId *string, r *http.Request) (*httputil.R
 		return &chosenBackend, nil
 	}
 
-	var padRead, err = ph.db.Get(PadPrefix + *padId)
+	var padRead, err = ph.db.Get(*padId)
 	if len(AvailableBackends.Available) == 0 {
 		return nil, errors.New("no backends available")
 	}
 	if errors.Is(err, sql.ErrNoRows) {
 		// if no backend is stored for this pad, create a new connection
-		AvailableBackends.Mutex.Lock()
-		var newBackend = AvailableBackends.Available[rand.IntN(len(AvailableBackends.Available))]
-		AvailableBackends.Mutex.Unlock()
+		result, err := ph.db.getClashByPadID(*padId)
 
-		if err = ph.db.Set(PadPrefix+*padId, models.DBBackend{
-			Backend: newBackend,
-		}); err != nil {
-			ph.logger.Info("Error while setting padId in DB: ", err)
+		if err != nil && errors.Is(err, sql.ErrNoRows) || len(result) == 0 {
+			AvailableBackends.Mutex.Lock()
+			var newBackend = AvailableBackends.Available[rand.IntN(len(AvailableBackends.Available))]
+			AvailableBackends.Mutex.Unlock()
+
+			if err = ph.db.Set(*padId, models.DBBackend{
+				Backend: newBackend,
+			}); err != nil {
+				ph.logger.Info("Error while setting padId in DB: ", err)
+			}
+			var chosenBackend = ph.p[newBackend]
+
+			return &chosenBackend, nil
+		} else if err != nil {
+			return nil, err
 		}
-		var chosenBackend = ph.p[newBackend]
 
-		return &chosenBackend, nil
+		// There is an active clash for this pad
+		ph.logger.Warnf("Pad %s is in a clash with backends: %v", *padId, result)
+		return nil, &ClashInPadId{
+			padId: *padId,
+		}
 	}
 
 	if len(AvailableBackends.Available) == 0 {
@@ -145,7 +163,7 @@ func (ph *ProxyHandler) createRoute(padId *string, r *http.Request) (*httputil.R
 		AvailableBackends.Mutex.Lock()
 		newBackend := AvailableBackends.Up[rand.IntN(len(AvailableBackends.Up))]
 		AvailableBackends.Mutex.Unlock()
-		if err = ph.db.Set(PadPrefix+*padId, models.DBBackend{
+		if err = ph.db.Set(*padId, models.DBBackend{
 			Backend: newBackend,
 		}); err != nil {
 			ph.logger.Info("Error while setting padId in DB: ", err)

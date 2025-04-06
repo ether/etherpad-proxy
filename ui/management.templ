@@ -1,0 +1,59 @@
+package ui
+
+templ Management(padIdMap map[string]string) {
+    <!DOCTYPE html>
+    <html lang="de">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Management</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #f0f0f0;
+                color: #333;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                margin: 0;
+            }
+            .management-container {
+                text-align: center;
+                padding: 20px;
+                border: 1px solid #ccc;
+                background-color: #fff;
+                border-radius: 5px;
+            }
+            .management-container h1 {
+                font-size: 2em;
+                margin: 0;
+            }
+            .management-container p {
+                margin: 10px 0 0;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="management-container">
+            <h1>Management</h1>
+            <table>
+            <thead>
+                <tr>
+                                <th>PadId</th>
+                                <th>Backend</th>
+                </tr>
+            </thead>
+            <tbody>
+                    for padId, backend := range padIdMap {
+                        <tr>
+                            <td>{padId}</td>
+                            <td>{backend}</td>
+                        </tr>
+                    }
+                                  </tbody>
+            </table>
+        </div>
+    </body>
+    </html>
+}
