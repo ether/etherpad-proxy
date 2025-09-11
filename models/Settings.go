@@ -10,6 +10,7 @@ type Settings struct {
 
 type DBSettings struct {
 	Filename string `json:"filename"`
+	Connstr  string `json:"postgresConnstr"`
 }
 
 type Backend struct {

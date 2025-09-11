@@ -1,30 +1,29 @@
-package main
+package postgres
 
 import (
 	"database/sql"
+
+	sq "github.com/Masterminds/squirrel"
+	"github.com/ether/etherpad-proxy/databases/interfaces"
 	"github.com/ether/etherpad-proxy/models"
-	_ "modernc.org/sqlite"
 )
 
-import sq "github.com/Masterminds/squirrel"
-
-type DB struct {
+type Postgres struct {
 	Conn *sql.DB
 }
 
-func NewDB(filename string) (*DB, error) {
-	conn, err := sql.Open("sqlite", filename)
+var _ interfaces.IDB = (*Postgres)(nil)
+
+func NewPostgresDB(connstr string) (*Postgres, error) {
+	conn, err := sql.Open("postgres", connstr)
 	if err != nil {
 		return nil, err
 	}
 
-	db := &DB{
+	db := &Postgres{
 		Conn: conn,
 	}
 
-	if _, err = db.Conn.Exec("PRAGMA foreign_keys = ON"); err != nil {
-		return nil, err
-	}
 	if _, err = db.Conn.Exec("CREATE TABLE IF NOT EXISTS pad (id TEXT, backend TEXT, PRIMARY KEY (id))"); err != nil {
 		return nil, err
 	}
@@ -36,11 +35,11 @@ func NewDB(filename string) (*DB, error) {
 	return db, nil
 }
 
-func (db *DB) Close() error {
+func (db *Postgres) Close() error {
 	return db.Conn.Close()
 }
 
-func (db *DB) Get(id string) (*models.DBBackend, error) {
+func (db *Postgres) Get(id string) (*models.DBBackend, error) {
 	var data string
 	var sqlGet, args, err = sq.Select("backend").From("pad").Where(sq.Eq{"id": id}).ToSql()
 	if err != nil {
@@ -58,7 +57,7 @@ func (db *DB) Get(id string) (*models.DBBackend, error) {
 	return &actualData, nil
 }
 
-func (db *DB) CleanUpPads(padIds []string, padPrefix string) error {
+func (db *Postgres) CleanUpPads(padIds []string, padPrefix string) error {
 	sqlDelete, args, err := sq.Delete("pad").Where(sq.And{sq.NotEq{"id": padIds},
 		sq.Like{"backend": padPrefix}}).ToSql()
 	if err != nil {
@@ -69,7 +68,7 @@ func (db *DB) CleanUpPads(padIds []string, padPrefix string) error {
 	return err
 }
 
-func (db *DB) RecordClash(id string, data string) error {
+func (db *Postgres) RecordClash(id string, data string) error {
 	_, err := db.Conn.Exec("INSERT OR REPLACE INTO clashes (id, data) VALUES (?, ?)", id, data)
 	if err != nil {
 		return err
@@ -77,7 +76,7 @@ func (db *DB) RecordClash(id string, data string) error {
 	return nil
 }
 
-func (db *DB) Set(id string, dbModel models.DBBackend) error {
+func (db *Postgres) Set(id string, dbModel models.DBBackend) error {
 
 	_, err := db.Conn.Exec("INSERT OR REPLACE INTO pad (id, backend) VALUES (?, ?)", id, dbModel.Backend)
 	if err != nil {
@@ -86,7 +85,7 @@ func (db *DB) Set(id string, dbModel models.DBBackend) error {
 	return nil
 }
 
-func (db *DB) getAllPads() (map[string]string, error) {
+func (db *Postgres) GetAllPads() (map[string]string, error) {
 	var padIDMap = make(map[string]string)
 	var sqlGet, args, err = sq.Select("id, backend").From("pad").ToSql()
 	if err != nil {
@@ -110,7 +109,7 @@ func (db *DB) getAllPads() (map[string]string, error) {
 	return padIDMap, nil
 }
 
-func (db *DB) getClashByPadID(padId string) ([]string, error) {
+func (db *Postgres) GetClashByPadID(padId string) ([]string, error) {
 	var sqlGet, args, err = sq.Select("data").From("clashes").Where(sq.Eq{"id": padId}).ToSql()
 
 	if err != nil {

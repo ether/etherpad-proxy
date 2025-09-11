@@ -43,7 +43,7 @@ Settings come from ``settings.json``, see ``settings.json.template`` for an exam
 ``clientSecret`` is the clientSecret used to authenticate with the backend Etherpad instances.  This should be a random string that is unique to this service.
 ``tokenURL`` is the URL of the OAuth2 token endpoint. This is normally `http://<your-host>:<your-port>/oidc/token`
 
-## Basic Auth backed Etherpads
+## Basic Auth-backed Etherpads
 
 ``username`` is the username used to authenticate with the backend Etherpad instances.  This should be a random string that is unique to this service.
 
@@ -51,6 +51,12 @@ Settings come from ``settings.json``, see ``settings.json.template`` for an exam
 
 Pads will be fetched every checkInterval * seconds whereas the normal checkInterval runs every checkInterval * milliseconds.
 If pads are deleted they are also deleted from the reverse proxy so it can be reassigned to another backend.
+
+
+## Database support
+
+- SQLite (default, file-based, no setup required) - specified by dbSettings.filename = "db/etherpad-proxy.db"
+- Postgres - specified by dbSettings.postgresConnstr - e.g. postgres://user:password@localhost:5432/etherpad_proxy_db?sslmode=disable
 
 # License
 Apache 2

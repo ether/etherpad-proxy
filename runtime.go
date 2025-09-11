@@ -4,11 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"github.com/ether/etherpad-proxy/models"
-	"go.uber.org/zap"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/clientcredentials"
-	_ "golang.org/x/oauth2/clientcredentials"
 	"io"
 	"net/http"
 	"net/http/httputil"
@@ -16,6 +11,14 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/ether/etherpad-proxy/databases"
+	"github.com/ether/etherpad-proxy/databases/interfaces"
+	"github.com/ether/etherpad-proxy/models"
+	"go.uber.org/zap"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
+	_ "golang.org/x/oauth2/clientcredentials"
 )
 
 var AvailableBackends = models.AvailableBackends{
@@ -38,7 +41,7 @@ func checkAvailabilityLoop(settings models.Settings, _ *zap.SugaredLogger) {
 	}()
 }
 
-func cleanUpEtherpadsLoop(settings models.Settings, logger *zap.SugaredLogger, db DB) {
+func cleanUpEtherpadsLoop(settings models.Settings, logger *zap.SugaredLogger, db interfaces.IDB) {
 	var timerP = time.Duration(settings.CheckInterval) * time.Second
 	var timerBefore = time.Duration(5) * time.Second
 	go func() {
@@ -50,7 +53,7 @@ func cleanUpEtherpadsLoop(settings models.Settings, logger *zap.SugaredLogger, d
 	}()
 }
 
-func cleanUpEtherpads(settings models.Settings, logger *zap.SugaredLogger, db DB) {
+func cleanUpEtherpads(settings models.Settings, logger *zap.SugaredLogger, db interfaces.IDB) {
 	AvailableBackends.Mutex.Lock()
 	defer AvailableBackends.Mutex.Unlock()
 	var mapOfPadsToBackends = make(map[string]string)
@@ -149,14 +152,14 @@ func StartServer(settings models.Settings, logger *zap.SugaredLogger) {
 	for key := range settings.Backends {
 		backendIds = append(backendIds, key)
 	}
-	db, err := NewDB(settings.DBSettings.Filename)
+	db, err := databases.CreateNewDatabase(settings)
 	if err != nil {
 		logger.Fatalf("Error opening database: %v", err)
 	}
 
 	proxies := make(map[string]httputil.ReverseProxy)
 	checkAvailabilityLoop(settings, logger)
-	cleanUpEtherpadsLoop(settings, logger, *db)
+	cleanUpEtherpadsLoop(settings, logger, db)
 	ScrapeJSFiles(settings)
 
 	for key, backend := range settings.Backends {
@@ -172,7 +175,7 @@ func StartServer(settings models.Settings, logger *zap.SugaredLogger) {
 	handler := ProxyHandler{
 		p:      proxies,
 		logger: logger,
-		db:     *db,
+		db:     db,
 	}
 
 	http.HandleFunc("/", handler.ServeHTTP)
