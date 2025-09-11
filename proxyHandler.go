@@ -4,10 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"github.com/PuerkitoBio/goquery"
-	"github.com/ether/etherpad-proxy/models"
-	"github.com/ether/etherpad-proxy/ui"
-	"go.uber.org/zap"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -15,6 +11,12 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/PuerkitoBio/goquery"
+	"github.com/ether/etherpad-proxy/databases/interfaces"
+	"github.com/ether/etherpad-proxy/models"
+	"github.com/ether/etherpad-proxy/ui"
+	"go.uber.org/zap"
 )
 import "math/rand/v2"
 import _ "github.com/ether/etherpad-proxy/ui"
@@ -22,7 +24,7 @@ import _ "github.com/ether/etherpad-proxy/ui"
 type ProxyHandler struct {
 	p      map[string]httputil.ReverseProxy
 	logger *zap.SugaredLogger
-	db     DB
+	db     interfaces.IDB
 }
 
 type StaticResource struct {
@@ -126,7 +128,7 @@ func (ph *ProxyHandler) createRoute(padId *string, r *http.Request) (*httputil.R
 	}
 	if errors.Is(err, sql.ErrNoRows) {
 		// if no backend is stored for this pad, create a new connection
-		result, err := ph.db.getClashByPadID(*padId)
+		result, err := ph.db.GetClashByPadID(*padId)
 
 		if err != nil && errors.Is(err, sql.ErrNoRows) || len(result) == 0 {
 			AvailableBackends.Mutex.Lock()
