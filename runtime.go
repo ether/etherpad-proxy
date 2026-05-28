@@ -4,60 +4,58 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
+	"os/signal"
 	"strconv"
-	"sync"
+	"syscall"
 	"time"
 
 	"github.com/ether/etherpad-proxy/databases"
 	"github.com/ether/etherpad-proxy/databases/interfaces"
+	"github.com/ether/etherpad-proxy/metrics"
 	"github.com/ether/etherpad-proxy/models"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
-	_ "golang.org/x/oauth2/clientcredentials"
 )
 
-var AvailableBackends = models.AvailableBackends{
-	Available: []string{},
-	Up:        []string{},
-	Mutex:     sync.Mutex{},
-}
+const defaultManagementPort = 8081
 
-func checkAvailabilityLoop(settings models.Settings, _ *zap.SugaredLogger) {
-	var timerP = time.Duration(settings.CheckInterval) * time.Millisecond
+func checkAvailabilityLoop(settings models.Settings, state *models.BackendState, _ *zap.SugaredLogger) {
+	timerP := time.Duration(settings.CheckInterval) * time.Millisecond
 	go func() {
 		for {
-			var response = checkAvailability(settings)
-			AvailableBackends.Mutex.Lock()
-			AvailableBackends.Available = response.Available
-			AvailableBackends.Up = response.Up
-			AvailableBackends.Mutex.Unlock()
+			response := checkAvailability(settings)
+			state.SetState(response.Available, response.Up)
+			metrics.BackendsAvailable.Set(float64(len(response.Available)))
+			metrics.BackendsUp.Set(float64(len(response.Up)))
 			time.Sleep(timerP)
 		}
 	}()
 }
 
-func cleanUpEtherpadsLoop(settings models.Settings, logger *zap.SugaredLogger, db interfaces.IDB) {
-	var timerP = time.Duration(settings.CheckInterval) * time.Second
-	var timerBefore = time.Duration(5) * time.Second
+func cleanUpEtherpadsLoop(settings models.Settings, logger *zap.SugaredLogger, db interfaces.IDB, state *models.BackendState) {
+	timerP := time.Duration(settings.CheckInterval) * time.Second
+	timerBefore := 5 * time.Second
 	go func() {
 		for {
 			time.Sleep(timerBefore)
-			cleanUpEtherpads(settings, logger, db)
+			cleanUpEtherpads(settings, logger, db, state)
 			time.Sleep(timerP)
 		}
 	}()
 }
 
-func cleanUpEtherpads(settings models.Settings, logger *zap.SugaredLogger, db interfaces.IDB) {
-	AvailableBackends.Mutex.Lock()
-	defer AvailableBackends.Mutex.Unlock()
-	var mapOfPadsToBackends = make(map[string]string)
-	for _, backend := range AvailableBackends.Up {
+func cleanUpEtherpads(settings models.Settings, logger *zap.SugaredLogger, db interfaces.IDB, state *models.BackendState) {
+	upBackends := state.SnapshotUp()
+	mapOfPadsToBackends := make(map[string]string)
+	for _, backend := range upBackends {
 		foundBackend := settings.Backends[backend]
 		var authorizationHeader string
 		if foundBackend.Username != nil && foundBackend.Password != nil {
@@ -91,112 +89,140 @@ func cleanUpEtherpads(settings models.Settings, logger *zap.SugaredLogger, db in
 			continue
 		}
 		bytes, err := io.ReadAll(res.Body)
-
 		if err != nil {
 			logger.Warnf("Error reading response body: %v", err)
+			_ = res.Body.Close()
 			continue
 		}
 		var response models.ListAllPadsModel
 		if err = json.Unmarshal(bytes, &response); err != nil {
 			logger.Warnf("Error unmarshalling response: %v", err)
+			_ = res.Body.Close()
 			continue
 		}
-
 		if response.Code != 0 {
 			logger.Warnf("Error retrieving etherpads: %v", response.Message)
+			_ = res.Body.Close()
 			continue
 		}
-
 		for _, pad := range response.Data.PadIds {
 			if entry, ok := mapOfPadsToBackends[pad]; ok {
-				logger.Warnf("Pad %s already exists in the map", entry)
+				logger.Warnf("Pad %s already exists on backend %s", pad, entry)
 				if err = db.RecordClash(pad, backend); err != nil {
+					metrics.DBErrorsTotal.Inc()
 					logger.Warnf("Error recording clash: %v", err)
+				} else {
+					metrics.ClashesTotal.Inc()
 				}
 				continue
 			}
 			mapOfPadsToBackends[pad] = backend
 		}
-
 		if err = res.Body.Close(); err != nil {
 			logger.Warnf("Error closing response body: %v", err)
-			continue
 		}
 	}
-	var backendToPads = make(map[string][]string)
 
+	backendToPads := make(map[string][]string)
 	for pad, backend := range mapOfPadsToBackends {
-		if val, ok := backendToPads[backend]; ok {
-			backendToPads[backend] = append(val, pad)
-		} else {
-			backendToPads[backend] = []string{pad}
-		}
+		backendToPads[backend] = append(backendToPads[backend], pad)
 	}
-
 	for backend, pads := range backendToPads {
 		if err := db.CleanUpPads(pads, backend); err != nil {
+			metrics.DBErrorsTotal.Inc()
 			logger.Warnf("Error cleaning up etherpads: %v", err)
 		}
 	}
-
 	for pad, backend := range mapOfPadsToBackends {
 		if err := db.Set(pad, models.DBBackend{Backend: backend}); err != nil {
+			metrics.DBErrorsTotal.Inc()
 			logger.Warnf("Error setting etherpad: %v", err)
 		}
 	}
-
 }
 
 func StartServer(settings models.Settings, logger *zap.SugaredLogger) {
-	var backendIds []string
-	for key := range settings.Backends {
-		backendIds = append(backendIds, key)
-	}
 	db, err := databases.CreateNewDatabase(settings)
 	if err != nil {
 		logger.Fatalf("Error opening database: %v", err)
 	}
 
+	state := &models.BackendState{}
+	static := newStaticResources()
+
+	checkAvailabilityLoop(settings, state, logger)
+	cleanUpEtherpadsLoop(settings, logger, db, state)
+	ScrapeJSFiles(settings, static, logger)
+
 	proxies := make(map[string]httputil.ReverseProxy)
-	checkAvailabilityLoop(settings, logger)
-	cleanUpEtherpadsLoop(settings, logger, db)
-	ScrapeJSFiles(settings)
-
 	for key, backend := range settings.Backends {
-		proxyUrl, err := url.Parse("http://" + backend.Host + ":" + strconv.Itoa(backend.Port))
-		if err != nil {
-			panic(err.Error())
+		proxyURL, perr := url.Parse("http://" + backend.Host + ":" + strconv.Itoa(backend.Port))
+		if perr != nil {
+			logger.Fatalf("Error parsing backend URL for %s: %v", key, perr)
 		}
-		proxy := httputil.NewSingleHostReverseProxy(proxyUrl)
-
-		proxies[key] = *proxy
+		proxies[key] = *httputil.NewSingleHostReverseProxy(proxyURL)
 	}
 
-	handler := ProxyHandler{
+	handler := &ProxyHandler{
 		p:      proxies,
 		logger: logger,
 		db:     db,
+		state:  state,
+		static: static,
 	}
 
-	http.HandleFunc("/", handler.ServeHTTP)
+	proxyMux := http.NewServeMux()
+	proxyMux.HandleFunc("/", handler.ServeHTTP)
+	proxySrv := &http.Server{Addr: ":" + strconv.Itoa(settings.Port), Handler: proxyMux}
+
+	managementPort := settings.ManagementPort
+	if managementPort == 0 {
+		managementPort = defaultManagementPort
+	}
+	adminMux := http.NewServeMux()
+	adminMux.Handle("/pads", &AdminPanel{DB: db, logger: logger})
+	adminMux.Handle("/metrics", promhttp.Handler())
+	adminMux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	adminMux.HandleFunc("/readyz", func(w http.ResponseWriter, _ *http.Request) {
+		if len(state.SnapshotUp()) > 0 {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		w.WriteHeader(http.StatusServiceUnavailable)
+	})
+	mgmtSrv := &http.Server{Addr: ":" + strconv.Itoa(managementPort), Handler: adminMux}
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
 	go func() {
-		const managementPort = 8081
-		adminMux := http.NewServeMux()
-		adminPanel := AdminPanel{
-			DB:     db,
-			logger: logger,
-		}
-		adminMux.Handle("/pads", &adminPanel)
-
 		logger.Info("Starting management server on port ", managementPort)
-		if err = http.ListenAndServe(":"+strconv.Itoa(managementPort), adminMux); err != nil {
-			logger.Fatalf("Error starting management server: %v", err)
+		if serr := mgmtSrv.ListenAndServe(); serr != nil && !errors.Is(serr, http.ErrServerClosed) {
+			logger.Fatalf("Error starting management server: %v", serr)
+		}
+	}()
+	go func() {
+		logger.Info("Starting server on port ", settings.Port)
+		if serr := proxySrv.ListenAndServe(); serr != nil && !errors.Is(serr, http.ErrServerClosed) {
+			logger.Fatalf("Error starting server: %v", serr)
 		}
 	}()
 
-	logger.Info("Starting server on port ", settings.Port)
-	if err = http.ListenAndServe(":"+strconv.Itoa(settings.Port), nil); err != nil {
-		logger.Fatalf("Error starting server: %v", err)
+	<-ctx.Done()
+	logger.Info("Shutdown signal received, draining...")
+	stop()
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if serr := proxySrv.Shutdown(shutdownCtx); serr != nil {
+		logger.Warnf("Proxy server shutdown error: %v", serr)
 	}
+	if serr := mgmtSrv.Shutdown(shutdownCtx); serr != nil {
+		logger.Warnf("Management server shutdown error: %v", serr)
+	}
+	if cerr := db.Close(); cerr != nil {
+		logger.Warnf("Database close error: %v", cerr)
+	}
+	logger.Info("Shutdown complete")
 }
