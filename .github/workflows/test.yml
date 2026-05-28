@@ -1,0 +1,33 @@
+name: Test
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: proxy
+          POSTGRES_PASSWORD: proxy
+          POSTGRES_DB: etherpad_proxy
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U proxy"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+      - name: Vet
+        run: go vet ./...
+      - name: Test (race)
+        env:
+          PG_TEST_DSN: postgres://proxy:proxy@localhost:5432/etherpad_proxy?sslmode=disable
+        run: go test -race ./...
