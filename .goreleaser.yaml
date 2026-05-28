@@ -1,0 +1,32 @@
+version: 2
+project_name: etherpad-proxy
+builds:
+  - id: etherpad-proxy
+    main: .
+    binary: etherpad-proxy
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+archives:
+  - id: default
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - README.md
+      - LICENSE.md
+      - settings.json.template
+      - support/etherpad-proxy.service
+checksum:
+  name_template: 'checksums.txt'
+release:
+  github:
+    owner: ether
+    name: etherpad-proxy

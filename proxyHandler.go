@@ -4,214 +4,224 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"log"
+	"math/rand/v2"
 	"net/http"
 	"net/http/httputil"
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/ether/etherpad-proxy/databases/interfaces"
+	"github.com/ether/etherpad-proxy/metrics"
 	"github.com/ether/etherpad-proxy/models"
 	"github.com/ether/etherpad-proxy/ui"
 	"go.uber.org/zap"
 )
-import "math/rand/v2"
-import _ "github.com/ether/etherpad-proxy/ui"
-
-type ProxyHandler struct {
-	p      map[string]httputil.ReverseProxy
-	logger *zap.SugaredLogger
-	db     interfaces.IDB
-}
 
 type StaticResource struct {
 	Backend  string
 	FullPath string
 }
 
-var StaticResourceMap = map[string]StaticResource{}
+// staticResources is a concurrency-safe map of scraped static resource names.
+type staticResources struct {
+	mu sync.RWMutex
+	m  map[string]StaticResource
+}
+
+func newStaticResources() *staticResources {
+	return &staticResources{m: make(map[string]StaticResource)}
+}
+
+func (s *staticResources) set(name string, r StaticResource) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.m[name] = r
+}
+
+func (s *staticResources) get(name string) (StaticResource, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	r, ok := s.m[name]
+	return r, ok
+}
+
+func (s *staticResources) anyPath() (string, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	for _, r := range s.m {
+		return r.FullPath, true
+	}
+	return "", false
+}
+
+type ProxyHandler struct {
+	p      map[string]httputil.ReverseProxy
+	logger *zap.SugaredLogger
+	db     interfaces.IDB
+	state  *models.BackendState
+	static *staticResources
+}
 
 type ResourceNotFound struct {
 	newPath string
 }
 
-func (m *ResourceNotFound) Error() string {
-	return "Resource not found"
-}
+func (m *ResourceNotFound) Error() string { return "Resource not found" }
 
 type ClashInPadId struct {
 	padId string
 }
 
-func (m *ClashInPadId) Error() string {
-	return "Resource not found"
-}
+func (m *ClashInPadId) Error() string { return "Pad clash" }
 
-func ScrapeJSFiles(backends models.Settings) {
+func ScrapeJSFiles(settings models.Settings, static *staticResources, logger *zap.SugaredLogger) {
 	go func() {
 		for {
-			for key, backend := range backends.Backends {
+			for key, backend := range settings.Backends {
 				response, err := http.Get("http://" + backend.Host + ":" + strconv.Itoa(backend.Port) + "/p/test")
 				if err != nil {
-					log.Println("Error while scraping JS files: ", err)
+					logger.Warnf("Error while scraping JS files: %v", err)
 					continue
 				}
-
 				doc, err := goquery.NewDocumentFromReader(response.Body)
-				doc.Find("script").Each(func(i int, s *goquery.Selection) {
-					log.Println(s.Attr("src"))
-					var src, ok = s.Attr("src")
-					if ok {
-						if strings.Index(src, "padbootstrap") != -1 {
-							var splittedPath = strings.Split(src, "/")
-							StaticResourceMap[splittedPath[len(splittedPath)-1]] = StaticResource{
-								Backend:  key,
-								FullPath: "http://" + backend.Host + ":" + strconv.Itoa(backend.Port) + "/" + splittedPath[len(splittedPath)-1],
-							}
-						}
+				if err != nil {
+					logger.Warnf("Error parsing scraped document: %v", err)
+					_ = response.Body.Close()
+					continue
+				}
+				doc.Find("script").Each(func(_ int, s *goquery.Selection) {
+					src, ok := s.Attr("src")
+					if ok && strings.Contains(src, "padbootstrap") {
+						parts := strings.Split(src, "/")
+						name := parts[len(parts)-1]
+						static.set(name, StaticResource{
+							Backend:  key,
+							FullPath: "http://" + backend.Host + ":" + strconv.Itoa(backend.Port) + "/" + name,
+						})
 					}
 				})
 				if err = response.Body.Close(); err != nil {
-					log.Println("Error while closing response body: ", err)
-					continue
+					logger.Warnf("Error while closing response body: %v", err)
 				}
 			}
 			time.Sleep(10 * time.Minute)
 		}
-
 	}()
 }
 
-func (ph *ProxyHandler) createRoute(padId *string, r *http.Request) (*httputil.ReverseProxy, error) {
+// chooseBackend returns the backend key a request should be routed to, or an
+// error (ResourceNotFound carries a redirect path; ClashInPadId signals an
+// unresolved pad clash).
+func (ph *ProxyHandler) chooseBackend(padId *string, r *http.Request) (string, error) {
+	available := ph.state.SnapshotAvailable()
+	up := ph.state.SnapshotUp()
+
 	if padId == nil {
-		var newBackend *string
-		// It's a static resource
-		AvailableBackends.Mutex.Lock()
-		if len(AvailableBackends.Available) == 0 {
-			return nil, errors.New("no backends available")
+		if len(available) == 0 {
+			return "", errors.New("no backends available")
 		}
 		if strings.Contains(r.URL.Path, "padbootstrap") {
-			// This is a static resource
-			// We need to find the backend that serves this resource
-			var splittedPath = strings.Split(r.URL.Path, "/")
-			var resourceName = splittedPath[len(splittedPath)-1]
-			if key, okay := StaticResourceMap[resourceName]; okay {
-				for i := 0; i < len(AvailableBackends.Up); i++ {
-					if AvailableBackends.Up[i] == key.Backend {
-						newBackend = &key.Backend
-						break
-					}
-				}
-			} else {
-				var firstNewPadRef string
-				for _, resource := range StaticResourceMap {
-					firstNewPadRef = resource.FullPath
-				}
-				return nil, &ResourceNotFound{
-					firstNewPadRef,
-				}
+			parts := strings.Split(r.URL.Path, "/")
+			name := parts[len(parts)-1]
+			if res, ok := ph.static.get(name); ok && slices.Contains(up, res.Backend) {
+				return res.Backend, nil
 			}
-		} else {
-			newBackend = &AvailableBackends.Available[rand.IntN(len(AvailableBackends.Available))]
+			if path, ok := ph.static.anyPath(); ok {
+				return "", &ResourceNotFound{newPath: path}
+			}
+			return "", &ResourceNotFound{}
 		}
-		AvailableBackends.Mutex.Unlock()
-		var chosenBackend = ph.p[*newBackend]
-		return &chosenBackend, nil
+		return available[rand.IntN(len(available))], nil
 	}
 
-	var padRead, err = ph.db.Get(*padId)
-	if len(AvailableBackends.Available) == 0 {
-		return nil, errors.New("no backends available")
+	if len(available) == 0 {
+		return "", errors.New("no backends available")
 	}
+
+	stored, err := ph.db.Get(*padId)
 	if errors.Is(err, sql.ErrNoRows) {
-		// if no backend is stored for this pad, create a new connection
-		result, err := ph.db.GetClashByPadID(*padId)
-
-		if err != nil && errors.Is(err, sql.ErrNoRows) || len(result) == 0 {
-			AvailableBackends.Mutex.Lock()
-			var newBackend = AvailableBackends.Available[rand.IntN(len(AvailableBackends.Available))]
-			AvailableBackends.Mutex.Unlock()
-
-			if err = ph.db.Set(*padId, models.DBBackend{
-				Backend: newBackend,
-			}); err != nil {
-				ph.logger.Info("Error while setting padId in DB: ", err)
+		clashes, cerr := ph.db.GetClashByPadID(*padId)
+		if cerr != nil && !errors.Is(cerr, sql.ErrNoRows) {
+			metrics.DBErrorsTotal.Inc()
+			return "", cerr
+		}
+		if len(clashes) == 0 {
+			candidate := available[rand.IntN(len(available))]
+			backend, aerr := ph.db.Assign(*padId, candidate)
+			if aerr != nil {
+				metrics.DBErrorsTotal.Inc()
+				return "", aerr
 			}
-			var chosenBackend = ph.p[newBackend]
-
-			return &chosenBackend, nil
-		} else if err != nil {
-			return nil, err
+			metrics.PadAssignmentsTotal.Inc()
+			return backend, nil
 		}
-
-		// There is an active clash for this pad
-		ph.logger.Warnf("Pad %s is in a clash with backends: %v", *padId, result)
-		return nil, &ClashInPadId{
-			padId: *padId,
-		}
+		ph.logger.Warnf("Pad %s is in a clash with backends: %v", *padId, clashes)
+		return "", &ClashInPadId{padId: *padId}
+	} else if err != nil {
+		metrics.DBErrorsTotal.Inc()
+		return "", err
 	}
 
-	if len(AvailableBackends.Available) == 0 {
-		ph.logger.Info("request made during startup")
+	if slices.Contains(up, stored.Backend) {
+		return stored.Backend, nil
 	}
-
-	if slices.Index(AvailableBackends.Up, padRead.Backend) != -1 {
-		var chosenBackend = ph.p[padRead.Backend]
-		return &chosenBackend, nil
-	} else {
-		AvailableBackends.Mutex.Lock()
-		newBackend := AvailableBackends.Up[rand.IntN(len(AvailableBackends.Up))]
-		AvailableBackends.Mutex.Unlock()
-		if err = ph.db.Set(*padId, models.DBBackend{
-			Backend: newBackend,
-		}); err != nil {
-			ph.logger.Info("Error while setting padId in DB: ", err)
-		}
-		var chosenBackend = ph.p[newBackend]
-		return &chosenBackend, nil
+	if len(up) == 0 {
+		return "", errors.New("no backends available")
 	}
+	newBackend := up[rand.IntN(len(up))]
+	if serr := ph.db.Set(*padId, models.DBBackend{Backend: newBackend}); serr != nil {
+		metrics.DBErrorsTotal.Inc()
+		ph.logger.Info("Error while setting padId in DB: ", serr)
+	}
+	return newBackend, nil
 }
 
 func (ph *ProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Println(r.URL)
+	ph.logger.Debugf("%s %s", r.Method, r.URL)
 	var padId *string
 
-	if strings.Index(r.URL.Path, "/p/") != -1 {
-		var separatedString = strings.Split(r.URL.Path, "/p/")[1]
-		var separatedStringByQuestion = strings.Split(separatedString, "?")[0]
-		padId = &strings.Split(separatedStringByQuestion, "/")[0]
-		ph.logger.Info("Initial request to /p/" + *padId)
+	if strings.Contains(r.URL.Path, "/p/") {
+		afterP := strings.Split(r.URL.Path, "/p/")[1]
+		beforeQuery := strings.Split(afterP, "?")[0]
+		first := strings.Split(beforeQuery, "/")[0]
+		padId = &first
+		ph.logger.Infof("Initial request to /p/%s", first)
 	}
 
 	if padId == nil {
-		padIdToWrite := r.URL.Query().Get("padId")
-		if padIdToWrite != "" {
-			padId = &padIdToWrite
+		if q := r.URL.Query().Get("padId"); q != "" {
+			padId = &q
 		}
 	}
 
-	var padProxy, err = ph.createRoute(padId, r)
-
+	backendKey, err := ph.chooseBackend(padId, r)
 	if err != nil {
-		if errors.Is(err, &ResourceNotFound{}) {
-			var resourceNotFound *ResourceNotFound
-			errors.As(err, &resourceNotFound)
-			var newPath = resourceNotFound.newPath
-			http.Redirect(w, r, newPath, http.StatusTemporaryRedirect)
+		var resourceNotFound *ResourceNotFound
+		if errors.As(err, &resourceNotFound) && resourceNotFound.newPath != "" {
+			metrics.RequestsTotal.WithLabelValues("resource_redirect").Inc()
+			http.Redirect(w, r, resourceNotFound.newPath, http.StatusTemporaryRedirect)
 			return
 		}
-
+		var clash *ClashInPadId
+		if errors.As(err, &clash) {
+			metrics.RequestsTotal.WithLabelValues("clash").Inc()
+		} else {
+			metrics.RequestsTotal.WithLabelValues("no_backend").Inc()
+		}
 		ph.logger.Error("Error while creating route: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		template := ui.Error()
-		if err := template.Render(context.Background(), w); err != nil {
-			ph.logger.Error("Error while rendering template: ", err)
+		if rerr := template.Render(context.Background(), w); rerr != nil {
+			ph.logger.Error("Error while rendering template: ", rerr)
 		}
 		return
 	}
 
-	padProxy.ServeHTTP(w, r)
+	proxy := ph.p[backendKey]
+	metrics.RequestsTotal.WithLabelValues("proxied").Inc()
+	proxy.ServeHTTP(w, r)
 }

@@ -28,5 +28,9 @@ func main() {
 		sugar.Fatalf("Error reading file: %v", err)
 	}
 
+	if err = settingsData.Validate(); err != nil {
+		sugar.Fatalf("Invalid settings: %v", err)
+	}
+
 	StartServer(settingsData, sugar)
 }

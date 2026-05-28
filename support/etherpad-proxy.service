@@ -1,0 +1,21 @@
+[Unit]
+Description=Etherpad sharding reverse proxy
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=etherpad-proxy
+Group=etherpad-proxy
+WorkingDirectory=/opt/etherpad-proxy
+Environment=SETTINGS_FILE=/opt/etherpad-proxy/settings.json
+ExecStart=/opt/etherpad-proxy/etherpad-proxy
+Restart=on-failure
+RestartSec=5
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
